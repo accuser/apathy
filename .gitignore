@@ -3,5 +3,6 @@
 .tsbuildinfo
 *.pem
 
+dist
 node_modules
 out
