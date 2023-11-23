@@ -32,16 +32,16 @@ interface Server {
 	 * Stops the server from accepting new connections and keeps existing
 	 * connections.
 	 */
-	close(callback?: (err?: Error) => void): Server;
+	close(callback?: (err?: Error) => void): void;
 
 	error(callback: (err?: Error) => void): Server;
 
 	/**
 	 * Start a server listening for connections.
 	 */
-	listen(callback?: ListenCallback): Server;
-	listen(port: number, callback?: ListenCallback): Server;
-	listen(port: number, host: string, callback?: ListenCallback): Server;
+	listen(callback?: ListenCallback): void;
+	listen(port: number, callback?: ListenCallback): void;
+	listen(port: number, host: string, callback?: ListenCallback): void;
 
 	route(path: string): Router;
 
@@ -74,8 +74,6 @@ export default (
 					  }
 					: undefined
 			);
-
-			return this;
 		},
 		error(callback) {
 			server.on("error", (err?: Error) => {
@@ -163,8 +161,6 @@ export default (
 						  }
 						: undefined
 				);
-
-			return this;
 		},
 		route(path) {
 			return {
