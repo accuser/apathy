@@ -13,11 +13,6 @@ type RequestCallback = (
 	response: import("node:http2").Http2ServerResponse
 ) => void;
 
-interface ListenOptions {
-	port?: number;
-	host?: string;
-}
-
 interface Router {
 	match(method: Method, callback: RequestCallback): Router;
 
