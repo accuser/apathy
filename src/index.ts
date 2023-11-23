@@ -114,6 +114,8 @@ export default (options: SecureServerOptions = {}): Server => {
 					console.error(err);
 				}
 			});
+
+			return this;
 		},
 		listen(
 			port_or_callback_or_undefined?: number | ListenCallback,
