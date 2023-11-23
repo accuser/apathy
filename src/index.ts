@@ -51,7 +51,8 @@ interface Server {
 	 * Start a server listening for connections.
 	 */
 	listen(callback?: ListenCallback): Server;
-	listen(options: ListenOptions, callback?: ListenCallback): Server;
+	listen(port: number, callback?: ListenCallback): Server;
+	listen(port: number, host: string, callback?: ListenCallback): Server;
 
 	match(method: Method, callback: RequestCallback): Server;
 	match(method: Method, path: string, callback: RequestCallback): Server;
@@ -115,17 +116,26 @@ export default (options: SecureServerOptions = {}): Server => {
 			});
 		},
 		listen(
-			options_or_callback?: ListenOptions | ListenCallback,
+			port_or_callback_or_undefined?: number | ListenCallback,
+			host_or_callback_or_undefined?: string | ListenCallback,
 			callback_or_undefined?: ListenCallback
 		) {
-			const options =
-				options_or_callback instanceof Function
-					? {}
-					: options_or_callback ?? {};
+			const port =
+				typeof port_or_callback_or_undefined === "number"
+					? port_or_callback_or_undefined
+					: undefined;
+			const host =
+				typeof host_or_callback_or_undefined === "string"
+					? host_or_callback_or_undefined
+					: undefined;
 			const callback =
-				options_or_callback instanceof Function
-					? options_or_callback
-					: callback_or_undefined;
+				callback_or_undefined ??
+				typeof host_or_callback_or_undefined === "string"
+					? undefined
+					: host_or_callback_or_undefined ??
+					  typeof port_or_callback_or_undefined === "number"
+					? undefined
+					: port_or_callback_or_undefined;
 
 			server
 				.on("request", (request, response) => {
@@ -164,7 +174,7 @@ export default (options: SecureServerOptions = {}): Server => {
 					}
 				})
 				.listen(
-					options,
+					{ host, port },
 					callback
 						? () => {
 								try {
