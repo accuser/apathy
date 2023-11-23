@@ -14,15 +14,15 @@ type RequestCallback = (
 ) => void;
 
 interface Router {
-	all(callback: RequestCallback): Router;
-	delete(callback: RequestCallback): Router;
-	get(callback: RequestCallback): Router;
-	head(callback: RequestCallback): Router;
-	options(callback: RequestCallback): Router;
-	patch(callback: RequestCallback): Router;
-	post(callback: RequestCallback): Router;
-	put(callback: RequestCallback): Router;
-	use(callback: RequestCallback): Router;
+	all(...callback: RequestCallback[]): Router;
+	delete(...callback: RequestCallback[]): Router;
+	get(...callback: RequestCallback[]): Router;
+	head(...callback: RequestCallback[]): Router;
+	options(...callback: RequestCallback[]): Router;
+	patch(...callback: RequestCallback[]): Router;
+	post(...callback: RequestCallback[]): Router;
+	put(...callback: RequestCallback[]): Router;
+	use(...callback: RequestCallback[]): Router;
 }
 
 interface Server {
@@ -43,15 +43,15 @@ interface Server {
 
 	route(path: string): Router;
 
-	all(path: string, callback: RequestCallback): Server;
-	delete(path: string, callback: RequestCallback): Server;
-	get(path: string, callback: RequestCallback): Server;
-	head(path: string, callback: RequestCallback): Server;
-	options(path: string, callback: RequestCallback): Server;
-	patch(path: string, callback: RequestCallback): Server;
-	post(path: string, callback: RequestCallback): Server;
-	put(path: string, callback: RequestCallback): Server;
-	use(path: string, callback: RequestCallback): Server;
+	all(path: string, ...callback: RequestCallback[]): Server;
+	delete(path: string, ...callback: RequestCallback[]): Server;
+	get(path: string, ...callback: RequestCallback[]): Server;
+	head(path: string, ...callback: RequestCallback[]): Server;
+	options(path: string, ...callback: RequestCallback[]): Server;
+	patch(path: string, ...callback: RequestCallback[]): Server;
+	post(path: string, ...callback: RequestCallback[]): Server;
+	put(path: string, ...callback: RequestCallback[]): Server;
+	use(path: string, ...callback: RequestCallback[]): Server;
 }
 
 export default (
@@ -163,93 +163,99 @@ export default (
 		route(path) {
 			const { keys, pattern } = parse(path);
 
-			function match(method: Method, callback: RequestCallback) {
+			function match(method: Method, ...callback: RequestCallback[]) {
 				server.on("request", (request, response) => {
 					const { authority, scheme, url } = request;
 					const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 					if (pattern.test(pathname)) {
-						request.on(
-							"route",
-							method === request.method
-								? () => {
-										try {
-											callback(request, response);
-										} catch (err) {
-											request.emit("error", err);
-										} finally {
+						callback.forEach((fn) => {
+							request.on(
+								"route",
+								method === request.method
+									? () => {
+											try {
+												fn(request, response);
+											} catch (err) {
+												request.emit("error", err);
+											} finally {
+												request.emit("routed");
+											}
+									  }
+									: () => {
 											request.emit("routed");
-										}
-								  }
-								: () => {
-										request.emit("routed");
-								  }
-						);
+									  }
+							);
+						});
 					}
 				});
 			}
 
 			return {
-				all(callback) {
+				all(...callback) {
 					server.on("request", (request, response) => {
 						const { authority, scheme, url } = request;
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 						if (pattern.test(pathname)) {
-							request.on("route", () => {
-								try {
-									callback(request, response);
-								} catch (err) {
-									request.emit("error", err);
-								} finally {
-									request.emit("routed");
-								}
+							callback.forEach((fn) => {
+								request.on("route", () => {
+									try {
+										fn(request, response);
+									} catch (err) {
+										request.emit("error", err);
+									} finally {
+										request.emit("routed");
+									}
+								});
 							});
 						}
 					});
 
 					return this;
 				},
-				delete(callback) {
-					match("DELETE", callback);
+				delete(...callback) {
+					match("DELETE", ...callback);
 					return this;
 				},
-				head(callback) {
-					match("HEAD", callback);
+				head(...callback) {
+					match("HEAD", ...callback);
 					return this;
 				},
-				get(callback) {
-					match("GET", callback);
+				get(...callback) {
+					match("GET", ...callback);
 					return this;
 				},
-				options(callback) {
-					match("OPTIONS", callback);
+				options(...callback) {
+					match("OPTIONS", ...callback);
 					return this;
 				},
-				patch(callback) {
-					match("PATCH", callback);
+				patch(...callback) {
+					match("PATCH", ...callback);
 					return this;
 				},
-				post(callback) {
-					match("POST", callback);
+				post(...callback) {
+					match("POST", ...callback);
 					return this;
 				},
-				put(callback) {
-					match("PUT", callback);
+				put(...callback) {
+					match("PUT", ...callback);
 					return this;
 				},
-				use(callback) {
+				use(...callback) {
 					server.on("request", (request, response) => {
 						const { authority, scheme, url } = request;
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 						if (pathname.startsWith(path)) {
-							request.on("route", () => {
-								try {
-									callback(request, response);
-								} catch (err) {
-									request.emit("error", err);
-								}
+							callback.forEach((fn) => {
+								request.on("route", () => {
+									try {
+										fn(request, response);
+									} catch (err) {
+										request.emit("error", err);
+									}
+								});
 							});
 						}
 					});
@@ -258,40 +264,40 @@ export default (
 				},
 			};
 		},
-		all(path, callback) {
-			this.route(path).all(callback);
+		all(path, ...callback) {
+			this.route(path).all(...callback);
 			return this;
 		},
-		delete(path, callback) {
-			this.route(path).delete(callback);
+		delete(path, ...callback) {
+			this.route(path).delete(...callback);
 			return this;
 		},
-		get(path, callback) {
-			this.route(path).get(callback);
+		get(path, ...callback) {
+			this.route(path).get(...callback);
 			return this;
 		},
-		head(path, callback) {
-			this.route(path).head(callback);
+		head(path, ...callback) {
+			this.route(path).head(...callback);
 			return this;
 		},
-		options(path, callback) {
-			this.route(path).options(callback);
+		options(path, ...callback) {
+			this.route(path).options(...callback);
 			return this;
 		},
-		patch(path, callback) {
-			this.route(path).patch(callback);
+		patch(path, ...callback) {
+			this.route(path).patch(...callback);
 			return this;
 		},
-		post(path, callback) {
-			this.route(path).post(callback);
+		post(path, ...callback) {
+			this.route(path).post(...callback);
 			return this;
 		},
-		put(path, callback) {
-			this.route(path).put(callback);
+		put(path, ...callback) {
+			this.route(path).put(...callback);
 			return this;
 		},
-		use(path, callback) {
-			this.route(path).use(callback);
+		use(path, ...callback) {
+			this.route(path).use(...callback);
 			return this;
 		},
 	};
