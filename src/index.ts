@@ -115,14 +115,14 @@ export default (
 				typeof host_or_callback_or_undefined === "string"
 					? host_or_callback_or_undefined
 					: undefined;
-			const callback =
-				callback_or_undefined ??
-				typeof host_or_callback_or_undefined === "string"
-					? undefined
-					: host_or_callback_or_undefined ??
-					  typeof port_or_callback_or_undefined === "number"
-					? undefined
-					: port_or_callback_or_undefined;
+			const callback = callback_or_undefined
+				? callback_or_undefined
+				: typeof host_or_callback_or_undefined === "string"
+				? undefined
+				: host_or_callback_or_undefined ??
+				  typeof port_or_callback_or_undefined === "number"
+				? undefined
+				: port_or_callback_or_undefined;
 
 			server
 				.on("request", (request, response) => {
