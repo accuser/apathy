@@ -2,11 +2,11 @@
 	"name": "@accuser/apathy",
 	"version": "0.1.0",
 	"description": "Apathy HTTP/2 server.",
-	"main": "out/index.js",
+	"main": "out/src/index.js",
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
-		"dev": "node --watch out/index.js"
+		"test": "node --test out/tests"
 	},
 	"keywords": [
 		"HTTP/2",
