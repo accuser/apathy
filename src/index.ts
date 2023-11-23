@@ -158,6 +158,22 @@ export default (options: SecureServerOptions = {}): Server => {
 
 			return this;
 		},
+		match(
+			method: Method,
+			path_or_callback: string | RequestCallback,
+			callback_or_undefined?: RequestCallback
+		) {
+			const path =
+				typeof path_or_callback === "string" ? path_or_callback : "/";
+			const callback =
+				typeof path_or_callback === "string"
+					? (callback_or_undefined as RequestCallback)
+					: path_or_callback;
+
+			this.route(path).match(method, callback);
+
+			return this;
+		},
 		route(path) {
 			return {
 				match(method: Method, callback: RequestCallback) {
@@ -258,22 +274,6 @@ export default (options: SecureServerOptions = {}): Server => {
 					return this;
 				},
 			};
-		},
-		match(
-			method: Method,
-			path_or_callback: string | RequestCallback,
-			callback_or_undefined?: RequestCallback
-		) {
-			const path =
-				typeof path_or_callback === "string" ? path_or_callback : "/";
-			const callback =
-				typeof path_or_callback === "string"
-					? (callback_or_undefined as RequestCallback)
-					: path_or_callback;
-
-			this.route(path).match(method, callback);
-
-			return this;
 		},
 		all(
 			path_or_callback: string | RequestCallback,
