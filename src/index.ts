@@ -286,7 +286,7 @@ export default (options: SecureServerOptions = {}): Server => {
 					? (callback_or_undefined as RequestCallback)
 					: path_or_callback;
 
-			this.route(path).use(callback);
+			this.route(path).all(callback);
 
 			return this;
 		},
