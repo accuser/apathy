@@ -2,12 +2,11 @@
 	"name": "@accuser/apathy",
 	"version": "0.1.0",
 	"description": "Apathy HTTP/2 server.",
-	"main": "dist/index.js",
+	"main": "out/index.js",
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
-		"dev": "node --watch out/index.js",
-		"build:dist": "esbuild --bundle --minify --outdir=dist --platform=node --target=node18 src/index.ts"
+		"dev": "node --watch out/index.js"
 	},
 	"keywords": [
 		"HTTP/2",
@@ -23,7 +22,6 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@types/node": "^20.9.4",
-		"esbuild": "^0.19.7",
 		"regexparam": "^2.0.1",
 		"typescript": "^5.3.2"
 	}

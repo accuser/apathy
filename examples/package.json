@@ -2,9 +2,10 @@
 	"name": "examples",
 	"version": "1.0.0",
 	"description": "",
-	"main": "index.js",
+	"main": "hello-world.js",
 	"type": "module",
 	"scripts": {
+		"hello-world": "node --watch ./hello-world.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
