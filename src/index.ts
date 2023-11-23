@@ -9,8 +9,6 @@ import { parse } from "regexparam";
 
 type Method = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
-type CloseCallback = (err?: Error | undefined) => void;
-
 type ListenCallback = (args: {
 	address: string | AddressInfo | null;
 	listening: boolean;
@@ -45,7 +43,9 @@ interface Server {
 	 * Stops the server from accepting new connections and keeps existing
 	 * connections.
 	 */
-	close(callback?: CloseCallback): Server;
+	close(callback?: (err?: Error) => void): Server;
+
+	error(callback: (err?: Error) => void): Server;
 
 	/**
 	 * Start a server listening for connections.
@@ -97,13 +97,22 @@ export default (options: SecureServerOptions = {}): Server => {
 							try {
 								callback(err);
 							} catch (err) {
-								console.error(err);
+								server.emit("error", err);
 							}
 					  }
 					: undefined
 			);
 
 			return this;
+		},
+		error(callback) {
+			server.on("error", (err?: Error) => {
+				try {
+					callback(err);
+				} catch (err) {
+					console.error(err);
+				}
+			});
 		},
 		listen(
 			options_or_callback?: ListenOptions | ListenCallback,
@@ -126,18 +135,32 @@ export default (options: SecureServerOptions = {}): Server => {
 						.once("routed", () => {
 							routed = true;
 						})
+						.on("error", (err: Error) => {
+							response.writeHead(500, "Internal Server Error", {
+								"Content-Type": "text/plain; charset=utf-8",
+							});
+						})
+						.on("error", (err: Error) => {
+							server.emit("error", err);
+						})
 						.emit("route");
 
-					if (response.headersSent || response.writableEnded) {
+					if (response.writableEnded) {
 						// do nothing
+					} else if (response.headersSent) {
+						response.end();
 					} else if (routed) {
 						response
-							.writeHead(405, { "Content-Type": "text/plain; charset=utf-8" })
-							.end("Method Not Allowed");
+							.writeHead(405, "Method Not Allowed", {
+								"Content-Type": "text/plain; charset=utf-8",
+							})
+							.end();
 					} else {
 						response
-							.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" })
-							.end("Not Found");
+							.writeHead(404, "Not Found", {
+								"Content-Type": "text/plain; charset=utf-8",
+							})
+							.end();
 					}
 				})
 				.listen(
@@ -150,7 +173,7 @@ export default (options: SecureServerOptions = {}): Server => {
 										listening: server.listening,
 									});
 								} catch (err) {
-									console.error(err);
+									server.emit("error", err);
 								}
 						  }
 						: undefined
@@ -190,11 +213,7 @@ export default (options: SecureServerOptions = {}): Server => {
 										callback(request, response);
 									}
 								} catch (err) {
-									response
-										.writeHead(500, {
-											"Content-Type": "text/plain; charset=utf-8",
-										})
-										.end("Internal Server Error");
+									request.emit("error", err);
 								} finally {
 									request.emit("routed");
 								}
@@ -216,11 +235,7 @@ export default (options: SecureServerOptions = {}): Server => {
 								try {
 									callback(request, response);
 								} catch (err) {
-									response
-										.writeHead(500, {
-											"Content-Type": "text/plain; charset=utf-8",
-										})
-										.end("Internal Server Error");
+									request.emit("error", err);
 								} finally {
 									request.emit("routed");
 								}
@@ -261,11 +276,7 @@ export default (options: SecureServerOptions = {}): Server => {
 								try {
 									callback(request, response);
 								} catch (err) {
-									response
-										.writeHead(500, {
-											"Content-Type": "text/plain; charset=utf-8",
-										})
-										.end("Internal Server Error");
+									request.emit("error", err);
 								}
 							});
 						}
