@@ -14,8 +14,6 @@ type RequestCallback = (
 ) => void;
 
 interface Router {
-	match(method: Method, callback: RequestCallback): Router;
-
 	all(callback: RequestCallback): Router;
 	delete(callback: RequestCallback): Router;
 	get(callback: RequestCallback): Router;
@@ -163,39 +161,36 @@ export default (
 				);
 		},
 		route(path) {
-			return {
-				match(method: Method, callback: RequestCallback) {
-					const { keys, pattern } = parse(path);
+			const { keys, pattern } = parse(path);
 
-					server.on("request", (request, response) => {
-						const { authority, scheme, url } = request;
-						const { pathname } = new URL(url, `${scheme}://${authority}`);
+			function match(method: Method, callback: RequestCallback) {
+				server.on("request", (request, response) => {
+					const { authority, scheme, url } = request;
+					const { pathname } = new URL(url, `${scheme}://${authority}`);
 
-						if (pattern.test(pathname)) {
-							request.on(
-								"route",
-								method === request.method
-									? () => {
-											try {
-												callback(request, response);
-											} catch (err) {
-												request.emit("error", err);
-											} finally {
-												request.emit("routed");
-											}
-									  }
-									: () => {
+					if (pattern.test(pathname)) {
+						request.on(
+							"route",
+							method === request.method
+								? () => {
+										try {
+											callback(request, response);
+										} catch (err) {
+											request.emit("error", err);
+										} finally {
 											request.emit("routed");
-									  }
-							);
-						}
-					});
+										}
+								  }
+								: () => {
+										request.emit("routed");
+								  }
+						);
+					}
+				});
+			}
 
-					return this;
-				},
+			return {
 				all(callback) {
-					const { keys, pattern } = parse(path);
-
 					server.on("request", (request, response) => {
 						const { authority, scheme, url } = request;
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
@@ -216,25 +211,32 @@ export default (
 					return this;
 				},
 				delete(callback) {
-					return this.match("DELETE", callback);
+					match("DELETE", callback);
+					return this;
 				},
 				head(callback) {
-					return this.match("HEAD", callback);
+					match("HEAD", callback);
+					return this;
 				},
 				get(callback) {
-					return this.match("GET", callback);
+					match("GET", callback);
+					return this;
 				},
 				options(callback) {
-					return this.match("OPTIONS", callback);
+					match("OPTIONS", callback);
+					return this;
 				},
 				patch(callback) {
-					return this.match("PATCH", callback);
+					match("PATCH", callback);
+					return this;
 				},
 				post(callback) {
-					return this.match("POST", callback);
+					match("POST", callback);
+					return this;
 				},
 				put(callback) {
-					return this.match("PUT", callback);
+					match("PUT", callback);
+					return this;
 				},
 				use(callback) {
 					server.on("request", (request, response) => {
