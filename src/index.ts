@@ -1,22 +1,16 @@
-import {
-	createSecureServer,
-	type Http2ServerRequest,
-	type Http2ServerResponse,
-	type SecureServerOptions,
-} from "node:http2";
-import { AddressInfo } from "node:net";
+import { createSecureServer } from "node:http2";
 import { parse } from "regexparam";
 
 type Method = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
 type ListenCallback = (args: {
-	address: string | AddressInfo | null;
+	address: string | import("node:net").AddressInfo | null;
 	listening: boolean;
 }) => void;
 
 type RequestCallback = (
-	request: Http2ServerRequest,
-	response: Http2ServerResponse
+	request: import("node:http2").Http2ServerRequest,
+	response: import("node:http2").Http2ServerResponse
 ) => void;
 
 interface ListenOptions {
@@ -54,40 +48,31 @@ interface Server {
 	listen(port: number, callback?: ListenCallback): Server;
 	listen(port: number, host: string, callback?: ListenCallback): Server;
 
-	match(method: Method, callback: RequestCallback): Server;
-	match(method: Method, path: string, callback: RequestCallback): Server;
-
 	route(path: string): Router;
 
-	all(callback: RequestCallback): Server;
 	all(path: string, callback: RequestCallback): Server;
 
-	delete(callback: RequestCallback): Server;
 	delete(path: string, callback: RequestCallback): Server;
 
-	get(callback: RequestCallback): Server;
 	get(path: string, callback: RequestCallback): Server;
 
-	head(callback: RequestCallback): Server;
 	head(path: string, callback: RequestCallback): Server;
 
-	options(callback: RequestCallback): Server;
 	options(path: string, callback: RequestCallback): Server;
 
-	patch(callback: RequestCallback): Server;
 	patch(path: string, callback: RequestCallback): Server;
 
-	post(callback: RequestCallback): Server;
 	post(path: string, callback: RequestCallback): Server;
 
-	put(callback: RequestCallback): Server;
 	put(path: string, callback: RequestCallback): Server;
 
 	use(callback: RequestCallback): Server;
 	use(path: string, callback: RequestCallback): Server;
 }
 
-export default (options: SecureServerOptions = {}): Server => {
+export default (
+	options: import("node:http2").SecureServerOptions = {}
+): Server => {
 	const server = createSecureServer(options);
 
 	return {
@@ -193,22 +178,6 @@ export default (options: SecureServerOptions = {}): Server => {
 
 			return this;
 		},
-		match(
-			method: Method,
-			path_or_callback: string | RequestCallback,
-			callback_or_undefined?: RequestCallback
-		) {
-			const path =
-				typeof path_or_callback === "string" ? path_or_callback : "/";
-			const callback =
-				typeof path_or_callback === "string"
-					? (callback_or_undefined as RequestCallback)
-					: path_or_callback;
-
-			this.route(path).match(method, callback);
-
-			return this;
-		},
 		route(path) {
 			return {
 				match(method: Method, callback: RequestCallback) {
@@ -298,41 +267,37 @@ export default (options: SecureServerOptions = {}): Server => {
 				},
 			};
 		},
-		all(
-			path_or_callback: string | RequestCallback,
-			callback_or_undefined?: RequestCallback
-		) {
-			const path =
-				typeof path_or_callback === "string" ? path_or_callback : "/";
-			const callback =
-				typeof path_or_callback === "string"
-					? (callback_or_undefined as RequestCallback)
-					: path_or_callback;
-
+		all(path, callback) {
 			this.route(path).all(callback);
-
 			return this;
 		},
 		delete(path, callback) {
-			return this.match("DELETE", path, callback);
+			this.route(path).delete(callback);
+			return this;
 		},
 		get(path, callback) {
-			return this.match("GET", path, callback);
+			this.route(path).get(callback);
+			return this;
 		},
 		head(path, callback) {
-			return this.match("HEAD", path, callback);
+			this.route(path).head(callback);
+			return this;
 		},
 		options(path, callback) {
-			return this.match("OPTIONS", path, callback);
+			this.route(path).options(callback);
+			return this;
 		},
 		patch(path, callback) {
-			return this.match("PATCH", path, callback);
+			this.route(path).patch(callback);
+			return this;
 		},
 		post(path, callback) {
-			return this.match("POST", path, callback);
+			this.route(path).post(callback);
+			return this;
 		},
 		put(path, callback) {
-			return this.match("PUT", path, callback);
+			this.route(path).put(callback);
+			return this;
 		},
 		use(
 			path_or_callback: string | RequestCallback,
@@ -346,8 +311,7 @@ export default (options: SecureServerOptions = {}): Server => {
 					: path_or_callback;
 
 			this.route(path).use(callback);
-
 			return this;
 		},
-	} as Server;
+	};
 };
