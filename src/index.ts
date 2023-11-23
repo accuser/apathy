@@ -123,10 +123,12 @@ export default (
 						.once("routed", () => {
 							routed = true;
 						})
-						.on("error", (err: Error) => {
-							response.writeHead(500, "Internal Server Error", {
-								"Content-Type": "text/plain; charset=utf-8",
-							});
+						.once("error", (err: Error) => {
+							response
+								.writeHead(500, "Internal Server Error", {
+									"Content-Type": "text/plain; charset=utf-8",
+								})
+								.end();
 						})
 						.on("error", (err: Error) => {
 							server.emit("error", err);
@@ -179,17 +181,22 @@ export default (
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 						if (pattern.test(pathname)) {
-							request.on("route", () => {
-								try {
-									if (method === request.method) {
-										callback(request, response);
-									}
-								} catch (err) {
-									request.emit("error", err);
-								} finally {
-									request.emit("routed");
-								}
-							});
+							request.on(
+								"route",
+								method === request.method
+									? () => {
+											try {
+												callback(request, response);
+											} catch (err) {
+												request.emit("error", err);
+											} finally {
+												request.emit("routed");
+											}
+									  }
+									: () => {
+											request.emit("routed");
+									  }
+							);
 						}
 					});
 
