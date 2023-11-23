@@ -51,22 +51,13 @@ interface Server {
 	route(path: string): Router;
 
 	all(path: string, callback: RequestCallback): Server;
-
 	delete(path: string, callback: RequestCallback): Server;
-
 	get(path: string, callback: RequestCallback): Server;
-
 	head(path: string, callback: RequestCallback): Server;
-
 	options(path: string, callback: RequestCallback): Server;
-
 	patch(path: string, callback: RequestCallback): Server;
-
 	post(path: string, callback: RequestCallback): Server;
-
 	put(path: string, callback: RequestCallback): Server;
-
-	use(callback: RequestCallback): Server;
 	use(path: string, callback: RequestCallback): Server;
 }
 
@@ -299,17 +290,7 @@ export default (
 			this.route(path).put(callback);
 			return this;
 		},
-		use(
-			path_or_callback: string | RequestCallback,
-			callback_or_undefined?: RequestCallback
-		) {
-			const path =
-				typeof path_or_callback === "string" ? path_or_callback : "/";
-			const callback =
-				typeof path_or_callback === "string"
-					? (callback_or_undefined as RequestCallback)
-					: path_or_callback;
-
+		use(path, callback) {
 			this.route(path).use(callback);
 			return this;
 		},
