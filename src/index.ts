@@ -115,7 +115,7 @@ export default (options: Options = {}): Server => {
 				: port_or_callback_or_undefined;
 
 			server
-				.on("request", (request, response) => {
+				.on("request", async (request, response) => {
 					let routed = false;
 
 					request
@@ -131,8 +131,13 @@ export default (options: Options = {}): Server => {
 						})
 						.on("error", (err: Error) => {
 							server.emit("error", err);
-						})
-						.emit("route", {} as Locals);
+						});
+
+					const locals: Locals = {};
+
+					for await (const callback of request.listeners("route")) {
+						await callback(locals);
+					}
 
 					if (response.writableEnded) {
 						// do nothing
@@ -191,9 +196,9 @@ export default (options: Options = {}): Server => {
 							request.on(
 								"route",
 								method === request.method
-									? (locals: Locals) => {
+									? async (locals: Locals) => {
 											try {
-												fn({ locals, params, request, response, url });
+												await fn({ locals, params, request, response, url });
 											} catch (err) {
 												request.emit("error", err);
 											} finally {
@@ -224,9 +229,9 @@ export default (options: Options = {}): Server => {
 								);
 
 							callback.forEach((fn) => {
-								request.on("route", (locals: Locals) => {
+								request.on("route", async (locals: Locals) => {
 									try {
-										fn({ locals, params, request, response, url });
+										await fn({ locals, params, request, response, url });
 									} catch (err) {
 										request.emit("error", err);
 									} finally {
@@ -282,9 +287,9 @@ export default (options: Options = {}): Server => {
 								);
 
 							callback.forEach((fn) => {
-								request.on("route", (locals: Locals) => {
+								request.on("route", async (locals: Locals) => {
 									try {
-										fn({ locals, params, request, response, url });
+										await fn({ locals, params, request, response, url });
 									} catch (err) {
 										request.emit("error", err);
 									}
