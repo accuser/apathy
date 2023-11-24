@@ -15,7 +15,11 @@ export type ListenCallback = (args: {
 	listening: boolean;
 }) => void;
 
-export type RequestCallback = (request: Request, response: Response) => void;
+export type RequestCallback = (event: {
+	locals: Locals;
+	request: Request;
+	response: Response;
+}) => void;
 
 interface Router {
 	all(...callback: RequestCallback[]): Router;
@@ -177,7 +181,7 @@ export default (options: Options = {}): Server => {
 								method === request.method
 									? (locals: Locals) => {
 											try {
-												fn(request, response);
+												fn({ locals, request, response });
 											} catch (err) {
 												request.emit("error", err);
 											} finally {
@@ -203,7 +207,7 @@ export default (options: Options = {}): Server => {
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn(request, response);
+										fn({ locals, request, response });
 									} catch (err) {
 										request.emit("error", err);
 									} finally {
@@ -253,7 +257,7 @@ export default (options: Options = {}): Server => {
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn(request, response);
+										fn({ locals, request, response });
 									} catch (err) {
 										request.emit("error", err);
 									}
