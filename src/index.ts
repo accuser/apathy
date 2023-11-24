@@ -64,6 +64,29 @@ interface Server {
 	use<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
 }
 
+export const all =
+	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	(event) =>
+		Promise.all(callback.map((fn) => fn(event)));
+
+export const any =
+	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	(event) =>
+		Promise.allSettled(callback.map((fn) => fn(event)));
+
+export const one =
+	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	(event) =>
+		Promise.race(callback.map((fn) => fn(event)));
+
+export const seq =
+	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	async (event) => {
+		for await (const fn of callback) {
+			await fn(event);
+		}
+	};
+
 export default (options: Options = {}): Server => {
 	const server = createSecureServer(options);
 
