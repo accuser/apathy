@@ -57,7 +57,43 @@ interface Server {
 export default (
 	options: import("node:http2").SecureServerOptions = {}
 ): Server => {
-	const server = createSecureServer(options);
+	const server = createSecureServer(options, (request, response) => {
+		let routed = false;
+
+		request
+			.once("routed", () => {
+				routed = true;
+			})
+			.once("error", (err: Error) => {
+				response
+					.writeHead(500, "Internal Server Error", {
+						"Content-Type": "text/plain; charset=utf-8",
+					})
+					.end();
+			})
+			.on("error", (err: Error) => {
+				server.emit("error", err);
+			})
+			.emit("route");
+
+		if (response.writableEnded) {
+			// do nothing
+		} else if (response.headersSent) {
+			response.end();
+		} else if (routed) {
+			response
+				.writeHead(405, "Method Not Allowed", {
+					"Content-Type": "text/plain; charset=utf-8",
+				})
+				.end();
+		} else {
+			response
+				.writeHead(404, "Not Found", {
+					"Content-Type": "text/plain; charset=utf-8",
+				})
+				.end();
+		}
+	});
 
 	return {
 		close(callback) {
@@ -106,59 +142,21 @@ export default (
 				? undefined
 				: port_or_callback_or_undefined;
 
-			server
-				.on("request", (request, response) => {
-					let routed = false;
-
-					request
-						.once("routed", () => {
-							routed = true;
-						})
-						.once("error", (err: Error) => {
-							response
-								.writeHead(500, "Internal Server Error", {
-									"Content-Type": "text/plain; charset=utf-8",
-								})
-								.end();
-						})
-						.on("error", (err: Error) => {
-							server.emit("error", err);
-						})
-						.emit("route");
-
-					if (response.writableEnded) {
-						// do nothing
-					} else if (response.headersSent) {
-						response.end();
-					} else if (routed) {
-						response
-							.writeHead(405, "Method Not Allowed", {
-								"Content-Type": "text/plain; charset=utf-8",
-							})
-							.end();
-					} else {
-						response
-							.writeHead(404, "Not Found", {
-								"Content-Type": "text/plain; charset=utf-8",
-							})
-							.end();
-					}
-				})
-				.listen(
-					{ host, port },
-					callback
-						? () => {
-								try {
-									callback({
-										address: server.address(),
-										listening: server.listening,
-									});
-								} catch (err) {
-									server.emit("error", err);
-								}
-						  }
-						: undefined
-				);
+			server.listen(
+				{ host, port },
+				callback
+					? () => {
+							try {
+								callback({
+									address: server.address(),
+									listening: server.listening,
+								});
+							} catch (err) {
+								server.emit("error", err);
+							}
+					  }
+					: undefined
+			);
 		},
 		route(path) {
 			const { keys, pattern } = parse(path);
