@@ -2,11 +2,6 @@ import apathy from "apathy";
 import { cert, host, key, port } from "./env.js";
 
 apathy({ allowHTTP1: true, cert, key })
-	.use("/", ({ request }) => {
-		const { method, httpVersion, url } = request;
-
-		console.log(`${method} ${url} HTTP/${httpVersion}`);
-	})
 	.get("/", ({ response }) => {
 		response.end(`Hello, World!`);
 	})
