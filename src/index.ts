@@ -178,12 +178,8 @@ export default (options: Options = {}): Server => {
 
 			server
 				.on("request", async (request, response) => {
-					let routed = false;
-
 					request
-						.once("routed", () => {
-							routed = true;
-						})
+						.once("routed", () => {})
 						.once("error", (err: Error) => {
 							response
 								.writeHead(500, "Internal Server Error", {
