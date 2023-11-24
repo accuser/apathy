@@ -1,17 +1,21 @@
 import { createSecureServer } from "node:http2";
 import { parse } from "regexparam";
 
+export interface Locals {}
+export type Options = import("node:http2").SecureServerOptions;
+export type Request = import("node:http2").Http2ServerRequest;
+export type Response = import("node:http2").Http2ServerResponse;
+
 type Method = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
 
-type ListenCallback = (args: {
+export type ErrorCallback = (err?: Error) => void;
+
+export type ListenCallback = (args: {
 	address: string | import("node:net").AddressInfo | null;
 	listening: boolean;
 }) => void;
 
-type RequestCallback = (
-	request: import("node:http2").Http2ServerRequest,
-	response: import("node:http2").Http2ServerResponse
-) => void;
+export type RequestCallback = (request: Request, response: Response) => void;
 
 interface Router {
 	all(...callback: RequestCallback[]): Router;
@@ -30,9 +34,9 @@ interface Server {
 	 * Stops the server from accepting new connections and keeps existing
 	 * connections.
 	 */
-	close(callback?: (err?: Error) => void): void;
+	close(callback?: ErrorCallback): void;
 
-	error(callback: (err?: Error) => void): Server;
+	error(callback: ErrorCallback): Server;
 
 	/**
 	 * Start a server listening for connections.
@@ -54,9 +58,7 @@ interface Server {
 	use(path: string, ...callback: RequestCallback[]): Server;
 }
 
-export default (
-	options: import("node:http2").SecureServerOptions = {}
-): Server => {
+export default (options: Options = {}): Server => {
 	const server = createSecureServer(options);
 
 	return {
@@ -124,7 +126,7 @@ export default (
 						.on("error", (err: Error) => {
 							server.emit("error", err);
 						})
-						.emit("route");
+						.emit("route", {} as Locals);
 
 					if (response.writableEnded) {
 						// do nothing
@@ -173,7 +175,7 @@ export default (
 							request.on(
 								"route",
 								method === request.method
-									? () => {
+									? (locals: Locals) => {
 											try {
 												fn(request, response);
 											} catch (err) {
@@ -199,7 +201,7 @@ export default (
 
 						if (pattern.test(pathname)) {
 							callback.forEach((fn) => {
-								request.on("route", () => {
+								request.on("route", (locals: Locals) => {
 									try {
 										fn(request, response);
 									} catch (err) {
@@ -249,7 +251,7 @@ export default (
 
 						if (pathname.startsWith(path)) {
 							callback.forEach((fn) => {
-								request.on("route", () => {
+								request.on("route", (locals: Locals) => {
 									try {
 										fn(request, response);
 									} catch (err) {
