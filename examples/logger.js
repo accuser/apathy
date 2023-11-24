@@ -23,12 +23,6 @@ apathy({ allowHTTP1: true, cert, key })
 		response.end();
 	})
 	.use("/", responseLogger)
-	.listen(port, host, ({ address }) => {
-		if (address === null) {
-			// do nothing
-		} else if (typeof address === "string") {
-			console.log("Listening at", address);
-		} else {
-			console.log(`Listening at https://${address.address}:${address.port}`);
-		}
+	.listen(port, host, () => {
+		console.log(`Listening at https://${host}:${port}`);
 	});
