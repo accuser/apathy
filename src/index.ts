@@ -2,6 +2,7 @@ import { createSecureServer } from "node:http2";
 import { parse, type RouteParams } from "regexparam";
 
 export interface Locals {}
+
 export type Options = import("node:http2").SecureServerOptions;
 export type Request = import("node:http2").Http2ServerRequest;
 export type Response = import("node:http2").Http2ServerResponse;
@@ -64,21 +65,59 @@ interface Server {
 	use<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
 }
 
+/**
+ * Combines multiple {@link RequestCallback} functions into a single function
+ * that invokes all the provided callbacks concurrently and returns a
+ * {@link Promise} that resolves when all the callbacks have been resolved.
+ */
 export const all =
 	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
 	(event) =>
 		Promise.all(callback.map((fn) => fn(event)));
 
+/**
+ * Combines multiple {@link RequestCallback} functions into a single function
+ * that invokes all the provided callbacks concurrently and returns a
+ * {@link Promise} that resolves when all the callbacks have been settled.
+ */
 export const any =
 	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
 	(event) =>
 		Promise.allSettled(callback.map((fn) => fn(event)));
 
+/**
+ * Combines multiple {@link RequestCallback} functions into a single function
+ * that invokes all the provided callbacks concurrently and returns a
+ * {@link Promise} that resolves when the first callback is resolved.
+ *
+ * @example
+ * ```js
+ * const getFromCache = async (event) => { ... }
+ * const getFromRemove = async (event) => { ... }
+ *
+ * app.get("/posts/:id", one(getFromCache, getFromRemote));
+ * ```
+ */
 export const one =
 	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
 	(event) =>
 		Promise.race(callback.map((fn) => fn(event)));
 
+/**
+ * Combines multiple {@link RequestCallback} functions into a single function
+ * that invokes all the provided callbacks concurrently and returns a
+ * {@link Promise} that resolves when all the callbacks have been resolved in
+ * sequence.
+ *
+ * @example
+ * ```js
+ * const getCurrentUser = async (event) => { ... }
+ * const checkPermission = async (event) => { ... }
+ * const createPost = async (event) => { ... }
+ *
+ * app.post("/posts", one(getCurrentUser, checkPermission, createPost));
+ * ```
+ */
 export const seq =
 	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
 	async (event) => {
@@ -166,7 +205,7 @@ export default (options: Options = {}): Server => {
 						// do nothing
 					} else if (response.headersSent) {
 						response.end();
-					} else if (routed) {
+					} else if (request.listenerCount("routed")) {
 						response
 							.writeHead(405, "Method Not Allowed", {
 								"Content-Type": "text/plain; charset=utf-8",
