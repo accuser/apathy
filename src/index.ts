@@ -1,5 +1,5 @@
 import { createSecureServer } from "node:http2";
-import { parse } from "regexparam";
+import { parse, type RouteParams } from "regexparam";
 
 export interface Locals {}
 export type Options = import("node:http2").SecureServerOptions;
@@ -15,22 +15,23 @@ export type ListenCallback = (args: {
 	listening: boolean;
 }) => void;
 
-export type RequestCallback = (event: {
+export type RequestCallback<T extends string> = (event: {
 	locals: Locals;
+	params: RouteParams<T>;
 	request: Request;
 	response: Response;
 }) => void;
 
-interface Router {
-	all(...callback: RequestCallback[]): Router;
-	delete(...callback: RequestCallback[]): Router;
-	get(...callback: RequestCallback[]): Router;
-	head(...callback: RequestCallback[]): Router;
-	options(...callback: RequestCallback[]): Router;
-	patch(...callback: RequestCallback[]): Router;
-	post(...callback: RequestCallback[]): Router;
-	put(...callback: RequestCallback[]): Router;
-	use(...callback: RequestCallback[]): Router;
+interface Router<T extends string> {
+	all(...callback: RequestCallback<T>[]): Router<T>;
+	delete(...callback: RequestCallback<T>[]): Router<T>;
+	get(...callback: RequestCallback<T>[]): Router<T>;
+	head(...callback: RequestCallback<T>[]): Router<T>;
+	options(...callback: RequestCallback<T>[]): Router<T>;
+	patch(...callback: RequestCallback<T>[]): Router<T>;
+	post(...callback: RequestCallback<T>[]): Router<T>;
+	put(...callback: RequestCallback<T>[]): Router<T>;
+	use(...callback: RequestCallback<T>[]): Router<T>;
 }
 
 interface Server {
@@ -49,17 +50,17 @@ interface Server {
 	listen(port: number, callback?: ListenCallback): void;
 	listen(port: number, host: string, callback?: ListenCallback): void;
 
-	route(path: string): Router;
+	route<T extends string>(path: T): Router<T>;
 
-	all(path: string, ...callback: RequestCallback[]): Server;
-	delete(path: string, ...callback: RequestCallback[]): Server;
-	get(path: string, ...callback: RequestCallback[]): Server;
-	head(path: string, ...callback: RequestCallback[]): Server;
-	options(path: string, ...callback: RequestCallback[]): Server;
-	patch(path: string, ...callback: RequestCallback[]): Server;
-	post(path: string, ...callback: RequestCallback[]): Server;
-	put(path: string, ...callback: RequestCallback[]): Server;
-	use(path: string, ...callback: RequestCallback[]): Server;
+	all<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	delete<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	get<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	head<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	options<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	patch<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	post<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	put<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	use<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
 }
 
 export default (options: Options = {}): Server => {
@@ -169,19 +170,29 @@ export default (options: Options = {}): Server => {
 		route(path) {
 			const { keys, pattern } = parse(path);
 
-			function match(method: Method, ...callback: RequestCallback[]) {
+			function match(
+				method: Method,
+				...callback: RequestCallback<typeof path>[]
+			) {
 				server.on("request", (request, response) => {
 					const { authority, scheme, url } = request;
 					const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 					if (pattern.test(pathname)) {
+						const params = (pattern.exec(pathname) ?? [])
+							.slice(1)
+							.reduce(
+								(p, c, i) => ({ ...p, [keys[i]]: c }),
+								{} as RouteParams<typeof path>
+							);
+
 						callback.forEach((fn) => {
 							request.on(
 								"route",
 								method === request.method
 									? (locals: Locals) => {
 											try {
-												fn({ locals, request, response });
+												fn({ locals, params, request, response });
 											} catch (err) {
 												request.emit("error", err);
 											} finally {
@@ -204,10 +215,17 @@ export default (options: Options = {}): Server => {
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 						if (pattern.test(pathname)) {
+							const params = (pattern.exec(pathname) ?? [])
+								.slice(1)
+								.reduce(
+									(p, c, i) => ({ ...p, [keys[i]]: c }),
+									{} as RouteParams<typeof path>
+								);
+
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn({ locals, request, response });
+										fn({ locals, params, request, response });
 									} catch (err) {
 										request.emit("error", err);
 									} finally {
@@ -254,10 +272,17 @@ export default (options: Options = {}): Server => {
 						const { pathname } = new URL(url, `${scheme}://${authority}`);
 
 						if (pathname.startsWith(path)) {
+							const params = (pattern.exec(pathname) ?? [])
+								.slice(1)
+								.reduce(
+									(p, c, i) => ({ ...p, [keys[i]]: c }),
+									{} as RouteParams<typeof path>
+								);
+
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn({ locals, request, response });
+										fn({ locals, params, request, response });
 									} catch (err) {
 										request.emit("error", err);
 									}
