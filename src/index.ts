@@ -20,6 +20,7 @@ export type RequestCallback<T extends string> = (event: {
 	params: RouteParams<T>;
 	request: Request;
 	response: Response;
+	url: URL;
 }) => void;
 
 interface Router<T extends string> {
@@ -175,11 +176,11 @@ export default (options: Options = {}): Server => {
 				...callback: RequestCallback<typeof path>[]
 			) {
 				server.on("request", (request, response) => {
-					const { authority, scheme, url } = request;
-					const { pathname } = new URL(url, `${scheme}://${authority}`);
+					const { authority, scheme, url: target } = request;
+					const url = new URL(target, `${scheme}://${authority}`);
 
-					if (pattern.test(pathname)) {
-						const params = (pattern.exec(pathname) ?? [])
+					if (pattern.test(url.pathname)) {
+						const params = (pattern.exec(url.pathname) ?? [])
 							.slice(1)
 							.reduce(
 								(p, c, i) => ({ ...p, [keys[i]]: c }),
@@ -192,7 +193,7 @@ export default (options: Options = {}): Server => {
 								method === request.method
 									? (locals: Locals) => {
 											try {
-												fn({ locals, params, request, response });
+												fn({ locals, params, request, response, url });
 											} catch (err) {
 												request.emit("error", err);
 											} finally {
@@ -211,11 +212,11 @@ export default (options: Options = {}): Server => {
 			return {
 				all(...callback) {
 					server.on("request", (request, response) => {
-						const { authority, scheme, url } = request;
-						const { pathname } = new URL(url, `${scheme}://${authority}`);
+						const { authority, scheme, url: target } = request;
+						const url = new URL(target, `${scheme}://${authority}`);
 
-						if (pattern.test(pathname)) {
-							const params = (pattern.exec(pathname) ?? [])
+						if (pattern.test(url.pathname)) {
+							const params = (pattern.exec(url.pathname) ?? [])
 								.slice(1)
 								.reduce(
 									(p, c, i) => ({ ...p, [keys[i]]: c }),
@@ -225,7 +226,7 @@ export default (options: Options = {}): Server => {
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn({ locals, params, request, response });
+										fn({ locals, params, request, response, url });
 									} catch (err) {
 										request.emit("error", err);
 									} finally {
@@ -268,11 +269,12 @@ export default (options: Options = {}): Server => {
 				},
 				use(...callback) {
 					server.on("request", (request, response) => {
-						const { authority, scheme, url } = request;
-						const { pathname } = new URL(url, `${scheme}://${authority}`);
+						const { authority, scheme, url: target } = request;
 
-						if (pathname.startsWith(path)) {
-							const params = (pattern.exec(pathname) ?? [])
+						const url = new URL(target, `${scheme}://${authority}`);
+
+						if (url.pathname.startsWith(path)) {
+							const params = (pattern.exec(url.pathname) ?? [])
 								.slice(1)
 								.reduce(
 									(p, c, i) => ({ ...p, [keys[i]]: c }),
@@ -282,7 +284,7 @@ export default (options: Options = {}): Server => {
 							callback.forEach((fn) => {
 								request.on("route", (locals: Locals) => {
 									try {
-										fn({ locals, params, request, response });
+										fn({ locals, params, request, response, url });
 									} catch (err) {
 										request.emit("error", err);
 									}
