@@ -120,7 +120,7 @@ export const one =
  */
 export const seq =
 	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
-	async (event) => {
+	async (event): Promise<void> => {
 		for await (const fn of callback) {
 			await fn(event);
 		}
@@ -274,19 +274,21 @@ export default (options: Options = {}): Server => {
 
 			return {
 				all(...callback) {
-					server.on("request", (request, response) => {
-						const { authority, scheme, url: target } = request;
-						const url = new URL(target, `${scheme}://${authority}`);
+					if (callback.length) {
+						server.on("request", (request, response) => {
+							const { authority, scheme, url: target } = request;
+							const url = new URL(target, `${scheme}://${authority}`);
 
-						if (pattern.test(url.pathname)) {
-							const params = (pattern.exec(url.pathname) ?? [])
-								.slice(1)
-								.reduce(
-									(p, c, i) => ({ ...p, [keys[i]]: c }),
-									{} as RouteParams<typeof path>
-								);
+							if (pattern.test(url.pathname)) {
+								const params = (pattern.exec(url.pathname) ?? [])
+									.slice(1)
+									.reduce(
+										(p, c, i) => ({ ...p, [keys[i]]: c }),
+										{} as RouteParams<typeof path>
+									);
 
-							callback.forEach((fn) => {
+								const fn = seq(...callback);
+
 								request.on("route", async (locals: Locals) => {
 									try {
 										await fn({ locals, params, request, response, url });
@@ -296,9 +298,9 @@ export default (options: Options = {}): Server => {
 										request.emit("routed");
 									}
 								});
-							});
-						}
-					});
+							}
+						});
+					}
 
 					return this;
 				},
@@ -331,30 +333,38 @@ export default (options: Options = {}): Server => {
 					return this;
 				},
 				use(...callback) {
-					server.on("request", (request, response) => {
-						const { authority, scheme, url: target } = request;
+					if (callback.length) {
+						server.on("request", (request, response) => {
+							const { authority, scheme, url: target } = request;
 
-						const url = new URL(target, `${scheme}://${authority}`);
+							const url = new URL(target, `${scheme}://${authority}`);
 
-						if (url.pathname.startsWith(path)) {
-							const params = (pattern.exec(url.pathname) ?? [])
-								.slice(1)
-								.reduce(
-									(p, c, i) => ({ ...p, [keys[i]]: c }),
-									{} as RouteParams<typeof path>
-								);
+							if (url.pathname.startsWith(path)) {
+								const params = (pattern.exec(url.pathname) ?? [])
+									.slice(1)
+									.reduce(
+										(p, c, i) => ({ ...p, [keys[i]]: c }),
+										{} as RouteParams<typeof path>
+									);
 
-							callback.forEach((fn) => {
+								const fn = seq(...callback);
+
 								request.on("route", async (locals: Locals) => {
 									try {
-										await fn({ locals, params, request, response, url });
+										await fn({
+											locals,
+											params,
+											request,
+											response,
+											url,
+										});
 									} catch (err) {
 										request.emit("error", err);
 									}
 								});
-							});
-						}
-					});
+							}
+						});
+					}
 
 					return this;
 				},
