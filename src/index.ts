@@ -126,6 +126,33 @@ export const seq =
 		}
 	};
 
+const resolveListenArgs = (
+	port_or_callback_or_undefined?: number | ListenCallback,
+	host_or_callback_or_undefined?: string | ListenCallback,
+	callback_or_undefined?: ListenCallback
+) => {
+	const port =
+		typeof port_or_callback_or_undefined === "number"
+			? port_or_callback_or_undefined
+			: undefined;
+
+	const host =
+		typeof host_or_callback_or_undefined === "string"
+			? host_or_callback_or_undefined
+			: undefined;
+
+	const callback =
+		callback_or_undefined ||
+		(typeof host_or_callback_or_undefined === "string"
+			? undefined
+			: host_or_callback_or_undefined) ||
+		(typeof port_or_callback_or_undefined === "number"
+			? undefined
+			: port_or_callback_or_undefined);
+
+	return { port, host, callback };
+};
+
 export default (options: Options = {}): Server => {
 	const server = createSecureServer(options);
 
@@ -154,27 +181,8 @@ export default (options: Options = {}): Server => {
 
 			return this;
 		},
-		listen(
-			port_or_callback_or_undefined?: number | ListenCallback,
-			host_or_callback_or_undefined?: string | ListenCallback,
-			callback_or_undefined?: ListenCallback
-		) {
-			const port =
-				typeof port_or_callback_or_undefined === "number"
-					? port_or_callback_or_undefined
-					: undefined;
-			const host =
-				typeof host_or_callback_or_undefined === "string"
-					? host_or_callback_or_undefined
-					: undefined;
-			const callback = callback_or_undefined
-				? callback_or_undefined
-				: typeof host_or_callback_or_undefined === "string"
-				? undefined
-				: host_or_callback_or_undefined ??
-				  typeof port_or_callback_or_undefined === "number"
-				? undefined
-				: port_or_callback_or_undefined;
+		listen(...args: any[]) {
+			const { port, host, callback } = resolveListenArgs(...args);
 
 			server
 				.on("request", async (request, response) => {
