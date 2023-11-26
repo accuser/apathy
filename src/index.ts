@@ -226,7 +226,7 @@ export default (options: Options = {}): Server => {
 			);
 		},
 		error(callback) {
-			server.on("error", (err?: Error) => {
+			server.on("error", (err: Error) => {
 				try {
 					callback(err);
 				} catch (err) {
