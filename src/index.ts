@@ -64,14 +64,49 @@ interface Server {
 
 	route<T extends string>(path: T): Router<T>;
 
+	all<T extends string>(...callback: RequestCallback<T>[]): Server;
 	all<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	delete<T extends string>(...callback: RequestCallback<T>[]): Server;
 	delete<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP GET requests for the default path.
+	 */
+	get<T extends string>(...callback: RequestCallback<T>[]): Server;
 	get<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP HEAD requests for the default path.
+	 */
+	head<T extends string>(...callback: RequestCallback<T>[]): Server;
 	head<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP OPTIONS requests for the default path.
+	 */
+	options<T extends string>(...callback: RequestCallback<T>[]): Server;
 	options<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP PATCH requests for the default path.
+	 */
+	patch<T extends string>(...callback: RequestCallback<T>[]): Server;
 	patch<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP POST requests for the default path.
+	 */
+	post<T extends string>(...callback: RequestCallback<T>[]): Server;
 	post<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	/**
+	 * Registers a callback to handle HTTP PUT requests for the default path.
+	 */
+	put<T extends string>(...callback: RequestCallback<T>[]): Server;
 	put<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+
+	use<T extends string>(...callback: RequestCallback<T>[]): Server;
 	use<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
 }
 
@@ -161,6 +196,16 @@ const resolveListenArgs = (
 			: port_or_callback_or_undefined);
 
 	return { port, host, callback };
+};
+
+const resolveMethodArgs = <T extends string>(
+	arg_0: T | RequestCallback<T>,
+	...rest: RequestCallback<T>[]
+) => {
+	const [path, ...callback] =
+		typeof arg_0 === "string" ? [arg_0, ...rest] : ["/" as T, arg_0, ...rest];
+
+	return { path, callback };
 };
 
 export default (options: Options = {}): Server => {
@@ -342,39 +387,49 @@ export default (options: Options = {}): Server => {
 				},
 			};
 		},
-		all(path, ...callback) {
+		all(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).all(...callback);
 			return this;
 		},
-		delete(path, ...callback) {
-			this.route(path).delete(...callback);
+		delete(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
+			this.route(path).all(...callback);
 			return this;
 		},
-		get(path, ...callback) {
+		/** Documentation */
+		get(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).get(...callback);
 			return this;
 		},
-		head(path, ...callback) {
+		head(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).head(...callback);
 			return this;
 		},
-		options(path, ...callback) {
+		options(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).options(...callback);
 			return this;
 		},
-		patch(path, ...callback) {
+		patch(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).patch(...callback);
 			return this;
 		},
-		post(path, ...callback) {
+		post(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).post(...callback);
 			return this;
 		},
-		put(path, ...callback) {
+		put(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).put(...callback);
 			return this;
 		},
-		use(path, ...callback) {
+		use(...args) {
+			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).use(...callback);
 			return this;
 		},
