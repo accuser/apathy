@@ -7,7 +7,17 @@ export type Options = import("node:http2").SecureServerOptions;
 export type Request = import("node:http2").Http2ServerRequest;
 export type Response = import("node:http2").Http2ServerResponse;
 
-type Method = "DELETE" | "GET" | "HEAD" | "OPTIONS" | "PATCH" | "POST" | "PUT";
+const METHODS = {
+	DELETE: "DELETE",
+	GET: "GET",
+	HEAD: "HEAD",
+	OPTIONS: "OPTIONS",
+	PATCH: "PATCH",
+	POST: "POST",
+	PUT: "PUT",
+} as const;
+
+type Method = keyof typeof METHODS;
 
 export type ErrorCallback = (err?: Error) => void;
 
@@ -240,141 +250,95 @@ export default (options: Options = {}): Server => {
 				);
 		},
 		route(path) {
-			const { keys, pattern } = parse(path);
+			const { keys: pathKeys, pattern: pathPattern } = parse(path);
 
+			for (const method in METHODS) {
+			}
 			function match(
-				method: Method,
+				this: Router<typeof path>,
+				{
+					keys = pathKeys,
+					method,
+					route = true,
+					pattern = pathPattern,
+				}: {
+					keys?: string[];
+					method?: Method;
+					route?: boolean;
+					pattern?: RegExp;
+				},
 				...callback: RequestCallback<typeof path>[]
 			) {
 				server.on("request", (request, response) => {
+					if (method && method !== request.method) {
+						// No match for method
+						return;
+					}
+
 					const { authority, scheme, url: target } = request;
 					const url = new URL(target, `${scheme}://${authority}`);
 
-					if (pattern.test(url.pathname)) {
-						const params = (pattern.exec(url.pathname) ?? [])
-							.slice(1)
-							.reduce(
-								(p, c, i) => ({ ...p, [keys[i]]: c }),
-								{} as RouteParams<typeof path>
-							);
-
-						callback.forEach((fn) => {
-							request.on(
-								"route",
-								method === request.method
-									? async (locals: Locals) => {
-											try {
-												await fn({ locals, params, request, response, url });
-											} catch (err) {
-												request.emit("error", err);
-											} finally {
-												request.emit("routed");
-											}
-									  }
-									: () => {
-											request.emit("routed");
-									  }
-							);
-						});
+					if (pattern.test(url.pathname) === false) {
+						// No match for path
+						return;
 					}
+
+					const params = (pattern.exec(url.pathname) ?? [])
+						.slice(1)
+						.reduce(
+							(p, c, i) => ({ ...p, [keys[i]]: c }),
+							{} as RouteParams<typeof path>
+						);
+
+					const fn = callback.length === 1 ? callback[0] : seq(...callback);
+
+					request.on("route", async (locals: Locals) => {
+						try {
+							await fn({ locals, params, request, response, url });
+						} catch (err) {
+							request.emit("error", err);
+						} finally {
+							if (route) {
+								request.emit("routed");
+							}
+						}
+					});
 				});
+
+				return this;
 			}
 
 			return {
 				all(...callback) {
-					if (callback.length) {
-						server.on("request", (request, response) => {
-							const { authority, scheme, url: target } = request;
-							const url = new URL(target, `${scheme}://${authority}`);
-
-							if (pattern.test(url.pathname)) {
-								const params = (pattern.exec(url.pathname) ?? [])
-									.slice(1)
-									.reduce(
-										(p, c, i) => ({ ...p, [keys[i]]: c }),
-										{} as RouteParams<typeof path>
-									);
-
-								const fn = seq(...callback);
-
-								request.on("route", async (locals: Locals) => {
-									try {
-										await fn({ locals, params, request, response, url });
-									} catch (err) {
-										request.emit("error", err);
-									} finally {
-										request.emit("routed");
-									}
-								});
-							}
-						});
-					}
-
-					return this;
+					return match.call(this, {}, ...callback);
 				},
 				delete(...callback) {
-					match("DELETE", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.DELETE }, ...callback);
 				},
 				head(...callback) {
-					match("HEAD", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.HEAD }, ...callback);
 				},
 				get(...callback) {
-					match("GET", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.GET }, ...callback);
 				},
 				options(...callback) {
-					match("OPTIONS", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.OPTIONS }, ...callback);
 				},
 				patch(...callback) {
-					match("PATCH", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.PATCH }, ...callback);
 				},
 				post(...callback) {
-					match("POST", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.POST }, ...callback);
 				},
 				put(...callback) {
-					match("PUT", ...callback);
-					return this;
+					return match.call(this, { method: METHODS.PUT }, ...callback);
 				},
 				use(...callback) {
-					if (callback.length) {
-						server.on("request", (request, response) => {
-							const { authority, scheme, url: target } = request;
-
-							const url = new URL(target, `${scheme}://${authority}`);
-
-							if (url.pathname.startsWith(path)) {
-								const params = (pattern.exec(url.pathname) ?? [])
-									.slice(1)
-									.reduce(
-										(p, c, i) => ({ ...p, [keys[i]]: c }),
-										{} as RouteParams<typeof path>
-									);
-
-								const fn = seq(...callback);
-
-								request.on("route", async (locals: Locals) => {
-									try {
-										await fn({
-											locals,
-											params,
-											request,
-											response,
-											url,
-										});
-									} catch (err) {
-										request.emit("error", err);
-									}
-								});
-							}
-						});
-					}
-
-					return this;
+					return match.call(
+						this,
+						{ ...parse(path, true), route: false },
+						...callback
+					);
 				},
 			};
 		},
