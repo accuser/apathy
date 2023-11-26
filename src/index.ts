@@ -397,7 +397,6 @@ export default (options: Options = {}): Server => {
 			this.route(path).all(...callback);
 			return this;
 		},
-		/** Documentation */
 		get(...args) {
 			const { path, callback } = resolveMethodArgs(...args);
 			this.route(path).get(...callback);
