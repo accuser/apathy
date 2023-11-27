@@ -267,6 +267,15 @@ const resolveMethodArgs = <T extends Protocol, P extends string>(
 	return { path, callback };
 };
 
+const urlFrom = <T extends Protocol>(request: Request<T>) => {
+	const {
+		headers: { ":scheme": scheme = "http", host },
+		url = "/",
+	} = request;
+
+	return new URL(url, `${scheme}://${host}`);
+};
+
 export default <T extends Protocol>(
 	protocol: T,
 	options: Options<T> = {} as Options<T>
@@ -395,12 +404,7 @@ export default <T extends Protocol>(
 						return;
 					}
 
-					const host = (request.headers[":authority"] ||
-						request.headers["host"]) as string;
-					const scheme = (request.headers[":scheme"] || protocol) as string;
-					const target = request.url as string;
-
-					const url = new URL(target, `${scheme}://${host}`);
+					const url = urlFrom(request);
 
 					if (pattern.test(url.pathname) === false) {
 						// No match for path
@@ -458,11 +462,8 @@ export default <T extends Protocol>(
 					return match.call(this, { callback, method: METHODS.PUT });
 				},
 				use(...callback) {
-					return match.call(this, {
-						...parse(path, true),
-						callback,
-						route: false,
-					});
+					const { keys, pattern } = parse(path, true);
+					return match.call(this, { callback, keys, pattern });
 				},
 			};
 		},
