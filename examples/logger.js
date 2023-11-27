@@ -22,6 +22,6 @@ apathy("http")
 		response.end();
 	})
 	.use(responseLogger)
-	.listen(3000, ({ address }) => {
-		console.log(`Listening at http://${address.address}:${address.port}`);
+	.listen(3000, ({ address, scheme }) => {
+		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
 	});

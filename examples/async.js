@@ -42,6 +42,6 @@ apathy("http")
 		console.log(store);
 		response.end(JSON.stringify(store));
 	})
-	.listen(3000, ({ address }) => {
-		console.log(`Listening at https://${address.address}:${address.port}`);
+	.listen(3000, ({ address, scheme }) => {
+		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
 	});

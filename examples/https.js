@@ -8,6 +8,6 @@ apathy("https", { cert, key })
 	.all(({ response }) => {
 		response.end(`We're talking over HTTPS`);
 	})
-	.listen(8443, ({ address }) => {
-		console.log(`Listening at ${address.address}:${address.port}`);
+	.listen(8443, ({ address, scheme }) => {
+		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
 	});
