@@ -301,6 +301,12 @@ export default <T extends Protocol>(
 		listen(...args: any[]) {
 			const { port, host, callback } = resolveListenArgs(...args);
 
+			if (server.listenerCount("error") === 0) {
+				server.on("error", (err: Error) => {
+					console.error("[Apathy] unhandled error", err);
+				});
+			}
+
 			server
 				.on("request", async (request, response) => {
 					request
@@ -441,8 +447,8 @@ export default <T extends Protocol>(
 				},
 				use(...callback) {
 					return match.call(this, {
-						callback,
 						...parse(path, true),
+						callback,
 						route: false,
 					});
 				},
