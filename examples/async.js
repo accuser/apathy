@@ -1,28 +1,47 @@
-import apathy from "apathy";
-import { cert, host, key, port } from "./env.js";
+import apathy, { all, any, one, seq } from "apathy";
 
 const a = async ({ locals }) => {
-	const { status, statusText } = await fetch("https://google.com");
+	console.log("> a()");
 
-	locals.a = { status, statusText };
+	await new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
+		locals.store.push("a: delayed (500ms)");
+	});
 };
 
 const b = ({ locals }) => {
-	locals.b = 2;
+	console.log("> b()");
+
+	locals.store.push("b: immediate");
 };
 
-const c = ({ locals }) => {
-	locals.c = 3;
+const c = async ({ locals }) => {
+	console.log("> c()");
+
+	await new Promise((resolve) => setTimeout(resolve, 250)).then(() => {
+		locals.store.push("c: delayed (250ms)");
+	});
 };
 
-apathy({ allowHTTP1: true, cert, key })
-	.use("/", a, b, c)
-	.all("/", async ({ response, locals }) => {
-		response.end(JSON.stringify(locals));
+apathy("http")
+	.use(({ locals }) => {
+		locals.store = [];
 	})
-	.use("/", ({ locals }) => {
-		console.log("locals =", locals);
+	.use(({ locals }) => {
+		locals.store.push("SEQ");
+	}, seq(a, b, c))
+	.use(({ locals }) => {
+		locals.store.push("ALL");
+	}, all(a, b, c))
+	.use(({ locals }) => {
+		locals.store.push("ANY");
+	}, any(a, b, c))
+	.use(({ locals }) => {
+		locals.store.push("ONE");
+	}, one(a, b, c))
+	.all(async ({ response, locals: { store } }) => {
+		console.log(store);
+		response.end(JSON.stringify(store));
 	})
-	.listen(port, host, () => {
-		console.log(`Listening at https://${host}:${port}`);
+	.listen(3000, ({ address }) => {
+		console.log(`Listening at https://${address.address}:${address.port}`);
 	});

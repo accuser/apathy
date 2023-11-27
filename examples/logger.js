@@ -1,5 +1,4 @@
 import apathy from "apathy";
-import { cert, host, key, port } from "./env.js";
 
 const requestLogger = (event) => {
 	const {
@@ -17,12 +16,12 @@ const responseLogger = (event) => {
 	console.log(`< ${statusCode}`);
 };
 
-apathy({ allowHTTP1: true, cert, key })
-	.use("/", requestLogger)
-	.all("/", ({ response }) => {
+apathy("http")
+	.use(requestLogger)
+	.all(({ response }) => {
 		response.end();
 	})
-	.use("/", responseLogger)
-	.listen(port, host, () => {
-		console.log(`Listening at https://${host}:${port}`);
+	.use(responseLogger)
+	.listen(3000, ({ address }) => {
+		console.log(`Listening at http://${address.address}:${address.port}`);
 	});

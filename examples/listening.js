@@ -1,11 +1,10 @@
 import apathy from "apathy";
-import { cert, host, key, port } from "./env.js";
 
-apathy({ allowHTTP1: true, cert, key })
-	.all("/", ({ response }) => {
+apathy("http")
+	.all(({ response }) => {
 		response.end();
 	})
-	.listen(port, host, ({ address }) => {
+	.listen(3000, ({ address }) => {
 		if (address === null) {
 			// do nothing
 		} else if (typeof address === "string") {
