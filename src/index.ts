@@ -13,25 +13,25 @@ const PROTOCOLS = {
 
 type Protocol = keyof typeof PROTOCOLS;
 
-type Options<T extends Protocol> = T extends "http"
+type Options<T extends Protocol> = T extends typeof PROTOCOLS.http
 	? import("node:http").ServerOptions
-	: T extends "http2"
+	: T extends typeof PROTOCOLS.http2
 	? import("node:http2").SecureServerOptions
-	: import("https").ServerOptions;
+	: import("node:https").ServerOptions;
 
-type Request<T extends Protocol> = T extends "http2"
+type Request<T extends Protocol> = T extends typeof PROTOCOLS.http2
 	? import("node:http2").Http2ServerRequest
 	: import("node:http").IncomingMessage;
 
-type Response<T extends Protocol> = T extends "http2"
+type Response<T extends Protocol> = T extends typeof PROTOCOLS.http2
 	? import("node:http2").Http2ServerResponse
 	: import("node:http").ServerResponse;
 
-type Server<T extends Protocol> = T extends "http"
+type Server<T extends Protocol> = T extends typeof PROTOCOLS.http
 	? import("node:http").Server
-	: T extends "http2"
+	: T extends typeof PROTOCOLS.http2
 	? import("node:http2").Http2SecureServer
-	: import("https").Server;
+	: import("node:https").Server;
 
 export type RequestCallback<T extends Protocol, P extends string> = (event: {
 	locals: Locals;
@@ -270,12 +270,13 @@ export default <T extends Protocol>(
 	protocol: T,
 	options: Options<T> = {} as Options<T>
 ): Apathy<T> => {
-	const server =
+	const server = (
 		protocol === "http"
 			? createHttpServer(options)
 			: protocol === "http2"
 			? createHttp2Server(options)
-			: createHttpsServer(options);
+			: createHttpsServer(options)
+	) as Server<T>;
 
 	return {
 		close(callback) {
@@ -386,14 +387,18 @@ export default <T extends Protocol>(
 					pattern?: RegExp;
 				}
 			) {
-				server.on("request", (request, response) => {
+				server.on("request", (request: Request<T>, response: Response<T>) => {
 					if (method && method !== request.method) {
 						// No match for method
 						return;
 					}
 
-					const { authority, scheme, url: target } = request;
-					const url = new URL(target, `${scheme}://${authority}`);
+					const host = (request.headers[":authority"] ||
+						request.headers["host"]) as string;
+					const scheme = (request.headers[":scheme"] || protocol) as string;
+					const target = request.url as string;
+
+					const url = new URL(target, `${scheme}://${host}`);
 
 					if (pattern.test(url.pathname) === false) {
 						// No match for path
