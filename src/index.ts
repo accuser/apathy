@@ -1,11 +1,45 @@
-import { createSecureServer } from "node:http2";
+import { createServer as createHttpServer } from "node:http";
+import { createSecureServer as createHttp2Server } from "node:http2";
+import { createServer as createHttpsServer } from "node:https";
 import { parse, type RouteParams } from "regexparam";
 
 export interface Locals {}
 
-export type Options = import("node:http2").SecureServerOptions;
-export type Request = import("node:http2").Http2ServerRequest;
-export type Response = import("node:http2").Http2ServerResponse;
+const PROTOCOLS = {
+	http: "HTTP",
+	http2: "HTTP/2",
+	https: "HTTPS",
+} as const;
+
+type Protocol = keyof typeof PROTOCOLS;
+
+type Options<T extends Protocol> = T extends "http"
+	? import("node:http").ServerOptions
+	: T extends "http2"
+	? import("node:http2").SecureServerOptions
+	: import("https").ServerOptions;
+
+type Request<T extends Protocol> = T extends "http2"
+	? import("node:http2").Http2ServerRequest
+	: import("node:http").IncomingMessage;
+
+type Response<T extends Protocol> = T extends "http2"
+	? import("node:http2").Http2ServerResponse
+	: import("node:http").ServerResponse;
+
+type Server<T extends Protocol> = T extends "http"
+	? import("node:http").Server
+	: T extends "http2"
+	? import("node:http2").Http2SecureServer
+	: import("https").Server;
+
+export type RequestCallback<T extends Protocol, P extends string> = (event: {
+	locals: Locals;
+	params: RouteParams<P>;
+	request: Request<T>;
+	response: Response<T>;
+	url: URL;
+}) => void;
 
 const METHODS = {
 	DELETE: "DELETE",
@@ -26,88 +60,100 @@ export type ListenCallback = (args: {
 	listening: boolean;
 }) => void;
 
-export type RequestCallback<T extends string> = (event: {
-	locals: Locals;
-	params: RouteParams<T>;
-	request: Request;
-	response: Response;
-	url: URL;
-}) => void;
-
-interface Router<T extends string> {
-	all(...callback: RequestCallback<T>[]): Router<T>;
-	delete(...callback: RequestCallback<T>[]): Router<T>;
-	get(...callback: RequestCallback<T>[]): Router<T>;
-	head(...callback: RequestCallback<T>[]): Router<T>;
-	options(...callback: RequestCallback<T>[]): Router<T>;
-	patch(...callback: RequestCallback<T>[]): Router<T>;
-	post(...callback: RequestCallback<T>[]): Router<T>;
-	put(...callback: RequestCallback<T>[]): Router<T>;
-	use(...callback: RequestCallback<T>[]): Router<T>;
+interface Router<T extends Protocol, P extends string> {
+	all(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	delete(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	get(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	head(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	options(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	patch(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	post(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	put(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	use(...callback: RequestCallback<T, P>[]): Router<T, P>;
 }
 
-interface Server {
-	/**
-	 * Stops the server from accepting new connections and keeps existing
-	 * connections.
-	 */
+interface Apathy<T extends Protocol> {
 	close(callback?: ErrorCallback): void;
 
-	error(callback: ErrorCallback): Server;
+	error(callback: ErrorCallback): Apathy<T>;
 
-	/**
-	 * Start a server listening for connections.
-	 */
 	listen(callback?: ListenCallback): void;
 	listen(port: number, callback?: ListenCallback): void;
 	listen(port: number, host: string, callback?: ListenCallback): void;
 
-	route<T extends string>(path: T): Router<T>;
+	route<P extends string>(path: P): Router<T, P>;
 
-	all<T extends string>(...callback: RequestCallback<T>[]): Server;
-	all<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	all<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	all<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
-	delete<T extends string>(...callback: RequestCallback<T>[]): Server;
-	delete<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	delete<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	delete<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP GET requests for the default path.
 	 */
-	get<T extends string>(...callback: RequestCallback<T>[]): Server;
-	get<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	get<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	get<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP HEAD requests for the default path.
 	 */
-	head<T extends string>(...callback: RequestCallback<T>[]): Server;
-	head<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	head<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	head<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP OPTIONS requests for the default path.
 	 */
-	options<T extends string>(...callback: RequestCallback<T>[]): Server;
-	options<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	options<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	options<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP PATCH requests for the default path.
 	 */
-	patch<T extends string>(...callback: RequestCallback<T>[]): Server;
-	patch<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	patch<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	patch<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP POST requests for the default path.
 	 */
-	post<T extends string>(...callback: RequestCallback<T>[]): Server;
-	post<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	post<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	post<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP PUT requests for the default path.
 	 */
-	put<T extends string>(...callback: RequestCallback<T>[]): Server;
-	put<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	put<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	put<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 
-	use<T extends string>(...callback: RequestCallback<T>[]): Server;
-	use<T extends string>(path: T, ...callback: RequestCallback<T>[]): Server;
+	use<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
+	use<P extends string>(
+		path: P,
+		...callback: RequestCallback<T, P>[]
+	): Apathy<T>;
 }
 
 /**
@@ -116,7 +162,9 @@ interface Server {
  * {@link Promise} that resolves when all the callbacks have been resolved.
  */
 export const all =
-	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	<T extends Protocol, P extends string>(
+		...callback: RequestCallback<T, P>[]
+	): RequestCallback<T, P> =>
 	(event) =>
 		Promise.all(callback.map((fn) => fn(event)));
 
@@ -126,7 +174,9 @@ export const all =
  * {@link Promise} that resolves when all the callbacks have been settled.
  */
 export const any =
-	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	<T extends Protocol, P extends string>(
+		...callback: RequestCallback<T, P>[]
+	): RequestCallback<T, P> =>
 	(event) =>
 		Promise.allSettled(callback.map((fn) => fn(event)));
 
@@ -144,7 +194,9 @@ export const any =
  * ```
  */
 export const one =
-	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	<T extends Protocol, P extends string>(
+		...callback: RequestCallback<T, P>[]
+	): RequestCallback<T, P> =>
 	(event) =>
 		Promise.race(callback.map((fn) => fn(event)));
 
@@ -164,7 +216,9 @@ export const one =
  * ```
  */
 export const seq =
-	<T extends string>(...callback: RequestCallback<T>[]): RequestCallback<T> =>
+	<T extends Protocol, P extends string>(
+		...callback: RequestCallback<T, P>[]
+	): RequestCallback<T, P> =>
 	async (event): Promise<void> => {
 		for await (const fn of callback) {
 			await fn(event);
@@ -198,18 +252,26 @@ const resolveListenArgs = (
 	return { port, host, callback };
 };
 
-const resolveMethodArgs = <T extends string>(
-	arg_0: T | RequestCallback<T>,
-	...rest: RequestCallback<T>[]
+const resolveMethodArgs = <T extends Protocol, P extends string>(
+	arg_0: P | RequestCallback<T, P>,
+	...rest: RequestCallback<T, P>[]
 ) => {
 	const [path, ...callback] =
-		typeof arg_0 === "string" ? [arg_0, ...rest] : ["/" as T, arg_0, ...rest];
+		typeof arg_0 === "string" ? [arg_0, ...rest] : ["/" as P, arg_0, ...rest];
 
 	return { path, callback };
 };
 
-export default (options: Options = {}): Server => {
-	const server = createSecureServer(options);
+export default <T extends Protocol>(
+	protocol: T,
+	options: Options<T> = {} as Options<T>
+): Apathy<T> => {
+	const server =
+		protocol === "http"
+			? createHttpServer(options)
+			: protocol === "http2"
+			? createHttp2Server(options)
+			: createHttpsServer(options);
 
 	return {
 		close(callback) {
@@ -300,7 +362,7 @@ export default (options: Options = {}): Server => {
 			for (const method in METHODS) {
 			}
 			function match(
-				this: Router<typeof path>,
+				this: Router<T, typeof path>,
 				{
 					keys = pathKeys,
 					method,
@@ -312,7 +374,7 @@ export default (options: Options = {}): Server => {
 					route?: boolean;
 					pattern?: RegExp;
 				},
-				...callback: RequestCallback<typeof path>[]
+				...callback: RequestCallback<T, typeof path>[]
 			) {
 				server.on("request", (request, response) => {
 					if (method && method !== request.method) {
