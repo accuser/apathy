@@ -60,6 +60,7 @@ export type ErrorCallback = (err: Error) => void;
 export type ListenCallback = (args: {
 	address: string | import("node:net").AddressInfo | null;
 	listening: boolean;
+	scheme: string;
 }) => void;
 
 interface Router<T extends Protocol, P extends string> {
@@ -360,6 +361,7 @@ export default <T extends Protocol>(
 									callback({
 										address: server.address(),
 										listening: server.listening,
+										scheme: protocol === "http" ? "http" : "https",
 									});
 								} catch (err) {
 									server.emit("error", err);
