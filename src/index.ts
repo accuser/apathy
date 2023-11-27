@@ -33,7 +33,7 @@ type Server<T extends Protocol> = T extends typeof PROTOCOLS.http
 	? import("node:http2").Http2SecureServer
 	: import("node:https").Server;
 
-export type RequestCallback<T extends Protocol, P extends string> = (event: {
+export type Handler<T extends Protocol, P extends string> = (event: {
 	locals: Locals;
 	params: RouteParams<P>;
 	request: Request<T>;
@@ -64,15 +64,15 @@ export type ListenCallback = (args: {
 }) => void;
 
 interface Router<T extends Protocol, P extends string> {
-	all(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	delete(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	get(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	head(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	options(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	patch(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	post(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	put(...callback: RequestCallback<T, P>[]): Router<T, P>;
-	use(...callback: RequestCallback<T, P>[]): Router<T, P>;
+	all(...callback: Handler<T, P>[]): Router<T, P>;
+	delete(...callback: Handler<T, P>[]): Router<T, P>;
+	get(...callback: Handler<T, P>[]): Router<T, P>;
+	head(...callback: Handler<T, P>[]): Router<T, P>;
+	options(...callback: Handler<T, P>[]): Router<T, P>;
+	patch(...callback: Handler<T, P>[]): Router<T, P>;
+	post(...callback: Handler<T, P>[]): Router<T, P>;
+	put(...callback: Handler<T, P>[]): Router<T, P>;
+	use(...callback: Handler<T, P>[]): Router<T, P>;
 }
 
 interface Apathy<T extends Protocol> {
@@ -86,107 +86,80 @@ interface Apathy<T extends Protocol> {
 
 	route<P extends string>(path: P): Router<T, P>;
 
-	all<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	all<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	all<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	all<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
-	delete<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	delete<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	delete<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	delete<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP GET requests for the default path.
 	 */
-	get<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	get<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	get<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	get<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP HEAD requests for the default path.
 	 */
-	head<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	head<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	head<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	head<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP OPTIONS requests for the default path.
 	 */
-	options<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	options<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	options<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	options<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP PATCH requests for the default path.
 	 */
-	patch<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	patch<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	patch<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	patch<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP POST requests for the default path.
 	 */
-	post<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	post<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	post<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	post<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
 	/**
 	 * Registers a callback to handle HTTP PUT requests for the default path.
 	 */
-	put<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	put<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	put<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	put<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 
-	use<P extends string>(...callback: RequestCallback<T, P>[]): Apathy<T>;
-	use<P extends string>(
-		path: P,
-		...callback: RequestCallback<T, P>[]
-	): Apathy<T>;
+	use<P extends string>(...callback: Handler<T, P>[]): Apathy<T>;
+	use<P extends string>(path: P, ...callback: Handler<T, P>[]): Apathy<T>;
 }
 
 /**
- * Combines multiple {@link RequestCallback} functions into a single function
+ * Combines multiple {@link Handler} functions into a single function
  * that invokes all the provided callbacks concurrently and returns a
  * {@link Promise} that resolves when all the callbacks have been resolved.
  */
 export const all =
 	<T extends Protocol, P extends string>(
-		...callback: RequestCallback<T, P>[]
-	): RequestCallback<T, P> =>
+		...callback: Handler<T, P>[]
+	): Handler<T, P> =>
 	(event) =>
 		Promise.all(callback.map((fn) => fn(event))).then(() => void 0);
 
 /**
- * Combines multiple {@link RequestCallback} functions into a single function
+ * Combines multiple {@link Handler} functions into a single function
  * that invokes all the provided callbacks concurrently and returns a
  * {@link Promise} that resolves when all the callbacks have been settled.
  */
 export const any =
 	<T extends Protocol, P extends string>(
-		...callback: RequestCallback<T, P>[]
-	): RequestCallback<T, P> =>
+		...callback: Handler<T, P>[]
+	): Handler<T, P> =>
 	(event) =>
 		Promise.allSettled(callback.map((fn) => fn(event)))
 			.then(() => void 0)
 			.catch(() => void 0);
 
 /**
- * Combines multiple {@link RequestCallback} functions into a single function
+ * Combines multiple {@link Handler} functions into a single function
  * that invokes all the provided callbacks concurrently and returns a
  * {@link Promise} that resolves when the first callback is resolved.
  *
@@ -200,13 +173,13 @@ export const any =
  */
 export const one =
 	<T extends Protocol, P extends string>(
-		...callback: RequestCallback<T, P>[]
-	): RequestCallback<T, P> =>
+		...callback: Handler<T, P>[]
+	): Handler<T, P> =>
 	(event) =>
 		Promise.race(callback.map((fn) => fn(event))).then(void 0);
 
 /**
- * Combines multiple {@link RequestCallback} functions into a single function
+ * Combines multiple {@link Handler} functions into a single function
  * that invokes all the provided callbacks concurrently and returns a
  * {@link Promise} that resolves when all the callbacks have been resolved in
  * sequence.
@@ -222,8 +195,8 @@ export const one =
  */
 export const seq =
 	<T extends Protocol, P extends string>(
-		...callback: RequestCallback<T, P>[]
-	): RequestCallback<T, P> =>
+		...callback: Handler<T, P>[]
+	): Handler<T, P> =>
 	async (event) => {
 		for await (const fn of callback) {
 			await fn(event);
@@ -258,8 +231,8 @@ const resolveListenArgs = (
 };
 
 const resolveMethodArgs = <T extends Protocol, P extends string>(
-	arg_0: P | RequestCallback<T, P>,
-	...rest: RequestCallback<T, P>[]
+	arg_0: P | Handler<T, P>,
+	...rest: Handler<T, P>[]
 ) => {
 	const [path, ...callback] =
 		typeof arg_0 === "string" ? [arg_0, ...rest] : ["/" as P, arg_0, ...rest];
@@ -391,7 +364,7 @@ export default <T extends Protocol>(
 					route = true,
 					pattern = pathPattern,
 				}: {
-					callback: RequestCallback<T, typeof path>[];
+					callback: Handler<T, typeof path>[];
 					keys?: string[];
 					method?: Method;
 					route?: boolean;
