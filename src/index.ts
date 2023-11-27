@@ -39,7 +39,7 @@ export type RequestCallback<T extends Protocol, P extends string> = (event: {
 	request: Request<T>;
 	response: Response<T>;
 	url: URL;
-}) => void;
+}) => Promise<void>;
 
 const METHODS = {
 	DELETE: "DELETE",
@@ -166,7 +166,7 @@ export const all =
 		...callback: RequestCallback<T, P>[]
 	): RequestCallback<T, P> =>
 	(event) =>
-		Promise.all(callback.map((fn) => fn(event)));
+		Promise.all(callback.map((fn) => fn(event))).then(() => void 0);
 
 /**
  * Combines multiple {@link RequestCallback} functions into a single function
@@ -178,7 +178,7 @@ export const any =
 		...callback: RequestCallback<T, P>[]
 	): RequestCallback<T, P> =>
 	(event) =>
-		Promise.allSettled(callback.map((fn) => fn(event)));
+		Promise.allSettled(callback.map((fn) => fn(event))).then(() => void 0);
 
 /**
  * Combines multiple {@link RequestCallback} functions into a single function
@@ -198,7 +198,7 @@ export const one =
 		...callback: RequestCallback<T, P>[]
 	): RequestCallback<T, P> =>
 	(event) =>
-		Promise.race(callback.map((fn) => fn(event)));
+		Promise.race(callback.map((fn) => fn(event))).then(void 0);
 
 /**
  * Combines multiple {@link RequestCallback} functions into a single function
@@ -219,7 +219,7 @@ export const seq =
 	<T extends Protocol, P extends string>(
 		...callback: RequestCallback<T, P>[]
 	): RequestCallback<T, P> =>
-	async (event): Promise<void> => {
+	async (event) => {
 		for await (const fn of callback) {
 			await fn(event);
 		}
