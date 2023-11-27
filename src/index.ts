@@ -466,7 +466,7 @@ export default <T extends Protocol>(
 		},
 		delete(...args) {
 			const { path, callback } = resolveMethodArgs(...args);
-			this.route(path).all(...callback);
+			this.route(path).delete(...callback);
 			return this;
 		},
 		get(...args) {
