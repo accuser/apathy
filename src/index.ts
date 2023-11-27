@@ -53,7 +53,9 @@ const METHODS = {
 
 type Method = keyof typeof METHODS;
 
-export type ErrorCallback = (err?: Error) => void;
+export type CloseCallback = (err?: Error) => void;
+
+export type ErrorCallback = (err: Error) => void;
 
 export type ListenCallback = (args: {
 	address: string | import("node:net").AddressInfo | null;
@@ -73,7 +75,7 @@ interface Router<T extends Protocol, P extends string> {
 }
 
 interface Apathy<T extends Protocol> {
-	close(callback?: ErrorCallback): void;
+	close(callback?: CloseCallback): void;
 
 	error(callback: ErrorCallback): Apathy<T>;
 
@@ -178,7 +180,9 @@ export const any =
 		...callback: RequestCallback<T, P>[]
 	): RequestCallback<T, P> =>
 	(event) =>
-		Promise.allSettled(callback.map((fn) => fn(event))).then(() => void 0);
+		Promise.allSettled(callback.map((fn) => fn(event)))
+			.then(() => void 0)
+			.catch(() => void 0);
 
 /**
  * Combines multiple {@link RequestCallback} functions into a single function
@@ -292,7 +296,7 @@ export default <T extends Protocol>(
 				try {
 					callback(err);
 				} catch (err) {
-					console.error(err);
+					console.error("[Apathy] unhandled error", err);
 				}
 			});
 
@@ -312,6 +316,7 @@ export default <T extends Protocol>(
 					request
 						.once("routed", () => {})
 						.once("error", (err: Error) => {
+							console.error("[Request] unhandled error", err);
 							response
 								.writeHead(500, "Internal Server Error", {
 									"Content-Type": "text/plain; charset=utf-8",
