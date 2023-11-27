@@ -359,22 +359,21 @@ export default <T extends Protocol>(
 		route(path) {
 			const { keys: pathKeys, pattern: pathPattern } = parse(path);
 
-			for (const method in METHODS) {
-			}
 			function match(
 				this: Router<T, typeof path>,
 				{
+					callback,
 					keys = pathKeys,
 					method,
 					route = true,
 					pattern = pathPattern,
 				}: {
+					callback: RequestCallback<T, typeof path>[];
 					keys?: string[];
 					method?: Method;
 					route?: boolean;
 					pattern?: RegExp;
-				},
-				...callback: RequestCallback<T, typeof path>[]
+				}
 			) {
 				server.on("request", (request, response) => {
 					if (method && method !== request.method) {
@@ -417,35 +416,35 @@ export default <T extends Protocol>(
 
 			return {
 				all(...callback) {
-					return match.call(this, {}, ...callback);
+					return match.call(this, { callback });
 				},
 				delete(...callback) {
-					return match.call(this, { method: METHODS.DELETE }, ...callback);
+					return match.call(this, { callback, method: METHODS.DELETE });
 				},
 				head(...callback) {
-					return match.call(this, { method: METHODS.HEAD }, ...callback);
+					return match.call(this, { callback, method: METHODS.HEAD });
 				},
 				get(...callback) {
-					return match.call(this, { method: METHODS.GET }, ...callback);
+					return match.call(this, { callback, method: METHODS.GET });
 				},
 				options(...callback) {
-					return match.call(this, { method: METHODS.OPTIONS }, ...callback);
+					return match.call(this, { callback, method: METHODS.OPTIONS });
 				},
 				patch(...callback) {
-					return match.call(this, { method: METHODS.PATCH }, ...callback);
+					return match.call(this, { callback, method: METHODS.PATCH });
 				},
 				post(...callback) {
-					return match.call(this, { method: METHODS.POST }, ...callback);
+					return match.call(this, { callback, method: METHODS.POST });
 				},
 				put(...callback) {
-					return match.call(this, { method: METHODS.PUT }, ...callback);
+					return match.call(this, { callback, method: METHODS.PUT });
 				},
 				use(...callback) {
-					return match.call(
-						this,
-						{ ...parse(path, true), route: false },
-						...callback
-					);
+					return match.call(this, {
+						callback,
+						...parse(path, true),
+						route: false,
+					});
 				},
 			};
 		},
