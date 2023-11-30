@@ -1,6 +1,7 @@
 import * as bootstrap from "./lib/bootstrap/index.js";
+export { all, any, one, seq } from "./lib/helpers/index.js";
 
-export default (): Apathy => {
+export const apathy = (): Apathy => {
 	const apathy = Object.create({ ...bootstrap });
 
 	apathy.handlers = [];
@@ -8,51 +9,53 @@ export default (): Apathy => {
 	return apathy;
 };
 
-export interface Apathy {
-	all<T extends string>(...handler: Handler<T>[]): Apathy;
-	all<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	delete<T extends string>(...handler: Handler<T>[]): Apathy;
-	delete<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	get<T extends string>(...handler: Handler<T>[]): Apathy;
-	get<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	head<T extends string>(...handler: Handler<T>[]): Apathy;
-	head<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	listen(callback?: ListenCallback): import("node:http").Server;
-	listen(port: number, callback?: ListenCallback): import("node:http").Server;
-	listen(
-		port: number,
-		host: string,
-		callback?: ListenCallback
-	): import("node:http").Server;
+export default apathy;
+
+const PROTOCOLS = {
+	http: "HTTP",
+	http2: "HTTP/2",
+	https: "HTTPS",
+} as const;
+
+type Protocol = keyof typeof PROTOCOLS;
+
+export interface Apathy<T extends Protocol = "http"> {
+	all<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	all<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	delete<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	delete<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	get<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	get<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	head<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	head<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	listen(callback?: ListenCallback): Server<T>;
+	listen(port: number, callback?: ListenCallback): Server<T>;
+	listen(port: number, host: string, callback?: ListenCallback): Server<T>;
 	listen(
 		port: number,
 		host: string,
 		backlog: number,
 		callback?: ListenCallback
-	): import("node:http").Server;
-	options<T extends string>(...handler: Handler<T>[]): Apathy;
-	options<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	patch<T extends string>(...handler: Handler<T>[]): Apathy;
-	patch<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	post<T extends string>(...handler: Handler<T>[]): Apathy;
-	post<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	put<T extends string>(...handler: Handler<T>[]): Apathy;
-	put<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
-	route<T extends string>(path: T): Apathy;
-	use<T extends string>(...handler: Handler<T>[]): Apathy;
-	use<T extends string>(path: T, ...handler: Handler<T>[]): Apathy;
+	): Server<T>;
+	options<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	options<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	patch<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	patch<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	post<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	post<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	put<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	put<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	route<U extends string>(path: U): Apathy;
+	use<U extends string>(...handler: Handler<T, U>[]): Apathy;
+	use<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
 }
 
-export interface Handler<
-	T extends string,
-	Request extends import("node:http").IncomingMessage = import("node:http").IncomingMessage,
-	Response extends import("node:http").ServerResponse = import("node:http").ServerResponse
-> {
+export interface Handler<T extends Protocol, U extends string> {
 	(event: {
 		locals: Locals;
-		params: import("regexparam").RouteParams<T>;
-		request: Request;
-		response: Response & { req: Request };
+		params: import("regexparam").RouteParams<U>;
+		request: Request<T>;
+		response: Response<T> & { req: Request<T> };
 		url: URL;
 	}): void | Promise<void>;
 }
@@ -72,14 +75,33 @@ export interface ListenOptions {
 	backlog?: number | undefined;
 }
 
-export interface Router<T extends string> {
-	all(...handler: Handler<T>[]): Router<T>;
-	delete(...handler: Handler<T>[]): Router<T>;
-	get(...handler: Handler<T>[]): Router<T>;
-	head(...handler: Handler<T>[]): Router<T>;
-	options(...handler: Handler<T>[]): Router<T>;
-	patch(...handler: Handler<T>[]): Router<T>;
-	post(...handler: Handler<T>[]): Router<T>;
-	put(...handler: Handler<T>[]): Router<T>;
-	use(...handler: Handler<T>[]): Router<T>;
+export type Request<T extends Protocol> = T extends "http2"
+	? import("node:http2").Http2ServerRequest
+	: import("node:http").IncomingMessage;
+export type Response<T extends Protocol> = T extends "http2"
+	? import("node:http2").Http2ServerResponse
+	: import("node:http").ServerResponse;
+
+export interface Router<T extends Protocol, U extends string> {
+	all(...handler: Handler<T, U>[]): Router<T, U>;
+	delete(...handler: Handler<T, U>[]): Router<T, U>;
+	get(...handler: Handler<T, U>[]): Router<T, U>;
+	head(...handler: Handler<T, U>[]): Router<T, U>;
+	options(...handler: Handler<T, U>[]): Router<T, U>;
+	patch(...handler: Handler<T, U>[]): Router<T, U>;
+	post(...handler: Handler<T, U>[]): Router<T, U>;
+	put(...handler: Handler<T, U>[]): Router<T, U>;
+	use(...handler: Handler<T, U>[]): Router<T, U>;
 }
+
+export type Server<T extends Protocol> = T extends "http2"
+	? import("node:http2").Http2SecureServer
+	: T extends "https"
+	? import("node:https").Server
+	: import("node:http").Server;
+
+export type ServerOptions<T extends Protocol> = T extends "http2"
+	? import("node:http2").SecureServerOptions
+	: T extends "https"
+	? import("node:https").ServerOptions
+	: import("node:http").ServerOptions;
