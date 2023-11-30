@@ -1,4 +1,4 @@
-import apathy from "apathy";
+import apathy from "../dist/index.js";
 import { cert, key } from "./env.js";
 
 apathy("http2", { cert, key })

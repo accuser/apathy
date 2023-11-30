@@ -1,4 +1,4 @@
-import apathy from "apathy";
+import apathy from "../dist/index.js";
 
 apathy("http")
 	.get("/greet", ({ response, url: { searchParams } }) => {

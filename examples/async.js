@@ -1,4 +1,4 @@
-import apathy, { all, any, one, seq } from "apathy";
+import apathy, { all, any, one, seq } from "../dist/index.js";
 
 const a = async ({ locals }) => {
 	console.log("> a()");

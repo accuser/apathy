@@ -1,4 +1,4 @@
-import apathy from "apathy";
+import apathy from "../dist/index.js";
 
 const requestLogger = (event) => {
 	const {

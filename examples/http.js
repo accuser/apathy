@@ -1,4 +1,4 @@
-import apathy from "apathy";
+import apathy from "../dist/index.js";
 
 apathy("http")
 	.use(({ request: { httpVersion, method, url } }) => {
