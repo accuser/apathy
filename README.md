@@ -1,6 +1,6 @@
 # Apathy
 
-`apathy` is an fluent API for building for building web applications, RESTful APIs, and microservices. It supports HTTP, HTTPS, and HTTP/2.
+`apathy` is an fluent API for building web applications, RESTful APIs, and microservices. It supports HTTP, HTTPS, and HTTP/2.
 
 ## Why should I use Apathy?
 
