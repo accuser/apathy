@@ -1,7 +1,16 @@
 # Apathy
 
-`apathy` is an HTTP/2 secure server with a familiar API for building web applications, RESTful APIs, and microservices.
+`apathy` is an fluent API for building for building web applications, RESTful APIs, and microservices. It supports HTTP, HTTPS, and HTTP/2.
 
 ## Why should I use Apathy?
 
-You shouldn't. Use [ExpressJS](https://expressjs.com). 
+You shouldn't. Use [ExpressJS](https://expressjs.com) instead. Or [Fastify](https://fastify.dev).
+
+## Benchmark
+
+```sh
+$ git clone git@github.com:accuser/apathy.git
+$ cd apathy
+$ pnpm i # or npm i
+$ pnpm benchmark
+```
