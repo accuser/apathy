@@ -1,5 +1,10 @@
 import { createServer } from "http";
-import type { Apathy, ListenCallback, ListenOptions } from "../../index.js";
+import type {
+	Apathy,
+	ListenCallback,
+	ListenOptions,
+	Protocol,
+} from "../../index.js";
 const DEFAULT_HOST = "localhost";
 const DEFAULT_PORT = 3000;
 
@@ -41,7 +46,7 @@ const urlFrom = (request: {
 	return new URL(url, `${scheme}://${authority ?? host}`);
 };
 
-export default function (this: Apathy, ...args: any[]) {
+export default function <T extends Protocol>(this: Apathy<T>, ...args: any[]) {
 	const { callback, options } = resolveArgs(...args);
 
 	const server = createServer(async (request, response) => {

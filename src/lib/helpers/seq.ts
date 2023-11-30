@@ -1,4 +1,4 @@
-import { Handler } from "../../index.js";
+import { Handler, Protocol } from "../../index.js";
 
 /**
  * Combines multiple {@link Handler} functions into a single function
@@ -15,7 +15,9 @@ import { Handler } from "../../index.js";
  * app.post("/posts", one(getCurrentUser, checkPermission, createPost));
  * ```
  */
-export default <T extends string>(...callback: Handler<T>[]): Handler<T> =>
+export default <T extends Protocol, U extends string>(
+		...callback: Handler<T, U>[]
+	): Handler<T, U> =>
 	async (event) => {
 		for await (const fn of callback) {
 			await fn(event);

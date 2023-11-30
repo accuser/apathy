@@ -1,14 +1,12 @@
 import type { IncomingHttpHeaders } from "http";
 import { parse, type RouteParams } from "regexparam";
-import type { Apathy, Handler, Router } from "../../index.js";
-
-const seq =
-	<T extends string>(...handler: Handler<T>[]): Handler<T> =>
-	async (event) => {
-		for await (const fn of handler) {
-			await fn(event);
-		}
-	};
+import {
+	seq,
+	type Apathy,
+	type Handler,
+	type Protocol,
+	type Router,
+} from "../../index.js";
 
 const METHODS = {
 	DELETE: "DELETE",
@@ -31,12 +29,15 @@ const urlFrom = (request: { headers: IncomingHttpHeaders; url?: string }) => {
 	return new URL(url, `${scheme}://${authority ?? host}`);
 };
 
-export default function <T extends string>(this: Apathy, path: T): Router<T> {
+export default function <T extends Protocol, U extends string>(
+	this: Apathy<T>,
+	path: U
+): Router<T, U> {
 	const { keys, pattern } = parse(path);
 
-	const handlers: Handler<T>[] = [];
+	const handlers: Handler<T, U>[] = [];
 
-	(this as unknown as { handlers: Handler<T>[] }).handlers.push(
+	(this as unknown as { handlers: Handler<T, U>[] }).handlers.push(
 		async (event) => {
 			if (pattern.test(event.url.pathname)) {
 				for await (const handler of handlers) {
@@ -46,13 +47,13 @@ export default function <T extends string>(this: Apathy, path: T): Router<T> {
 		}
 	);
 
-	const route = <T extends string>({
+	const route = ({
 		handler,
 		keys,
 		method,
 		pattern,
 	}: {
-		handler: Handler<T>[];
+		handler: Handler<T, U>[];
 		keys: false | string[];
 		method?: Method;
 		pattern: RegExp;
@@ -71,8 +72,8 @@ export default function <T extends string>(this: Apathy, path: T): Router<T> {
 			const params = keys
 				? (pattern.exec(url.pathname) ?? [])
 						.slice(1)
-						.reduce((p, c, i) => ({ ...p, [keys[i]]: c }), {} as RouteParams<T>)
-				: ({} as RouteParams<T>);
+						.reduce((p, c, i) => ({ ...p, [keys[i]]: c }), {} as RouteParams<U>)
+				: ({} as RouteParams<U>);
 
 			try {
 				await fn({ locals, params, request, response, url });
@@ -83,39 +84,39 @@ export default function <T extends string>(this: Apathy, path: T): Router<T> {
 	};
 
 	return Object.create({
-		all(...handler: Handler<T>[]) {
+		all(...handler: Handler<T, U>[]) {
 			route({ handler, keys, pattern });
 			return this;
 		},
-		delete(...handler: Handler<T>[]) {
+		delete(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.DELETE, pattern });
 			return this;
 		},
-		head(...handler: Handler<T>[]) {
+		head(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.HEAD, pattern });
 			return this;
 		},
-		get(...handler: Handler<T>[]) {
+		get(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.GET, pattern });
 			return this;
 		},
-		options(...handler: Handler<T>[]) {
+		options(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.OPTIONS, pattern });
 			return this;
 		},
-		patch(...handler: Handler<T>[]) {
+		patch(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.PATCH, pattern });
 			return this;
 		},
-		post(...handler: Handler<T>[]) {
+		post(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.POST, pattern });
 			return this;
 		},
-		put(...handler: Handler<T>[]) {
+		put(...handler: Handler<T, U>[]) {
 			route({ handler, keys, method: METHODS.PUT, pattern });
 			return this;
 		},
-		use(...handler: Handler<T>[]) {
+		use(...handler: Handler<T, U>[]) {
 			const { keys, pattern } = parse(path, true);
 			route({ handler, keys, pattern });
 			return this;

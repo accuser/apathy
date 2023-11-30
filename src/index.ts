@@ -1,7 +1,7 @@
 import * as bootstrap from "./lib/bootstrap/index.js";
 export { all, any, one, seq } from "./lib/helpers/index.js";
 
-export const apathy = (): Apathy => {
+export const apathy = <T extends Protocol>(protocol = "http"): Apathy<T> => {
 	const apathy = Object.create({ ...bootstrap });
 
 	apathy.handlers = [];
@@ -17,17 +17,17 @@ const PROTOCOLS = {
 	https: "HTTPS",
 } as const;
 
-type Protocol = keyof typeof PROTOCOLS;
+export type Protocol = keyof typeof PROTOCOLS;
 
-export interface Apathy<T extends Protocol = "http"> {
-	all<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	all<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	delete<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	delete<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	get<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	get<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	head<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	head<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+export interface Apathy<T extends Protocol> {
+	all<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	all<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	delete<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	delete<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	get<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	get<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	head<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	head<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
 	listen(callback?: ListenCallback): Server<T>;
 	listen(port: number, callback?: ListenCallback): Server<T>;
 	listen(port: number, host: string, callback?: ListenCallback): Server<T>;
@@ -37,17 +37,17 @@ export interface Apathy<T extends Protocol = "http"> {
 		backlog: number,
 		callback?: ListenCallback
 	): Server<T>;
-	options<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	options<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	patch<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	patch<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	post<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	post<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	put<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	put<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
-	route<U extends string>(path: U): Apathy;
-	use<U extends string>(...handler: Handler<T, U>[]): Apathy;
-	use<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy;
+	options<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	options<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	patch<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	patch<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	post<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	post<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	put<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	put<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
+	route<U extends string>(path: U): Apathy<T>;
+	use<U extends string>(...handler: Handler<T, U>[]): Apathy<T>;
+	use<U extends string>(path: U, ...handler: Handler<T, U>[]): Apathy<T>;
 }
 
 export interface Handler<T extends Protocol, U extends string> {
