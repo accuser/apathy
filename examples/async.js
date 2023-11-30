@@ -22,6 +22,14 @@ const c = async ({ locals }) => {
 	});
 };
 
+const d = async ({ locals }) => {
+	console.log("> d()*");
+
+	await new Promise((resolve, reject) => setTimeout(reject, 125)).then(() => {
+		locals.store.push("d: delayed (125)*");
+	});
+};
+
 apathy("http")
 	.use(({ locals }) => {
 		locals.store = [];
@@ -34,14 +42,14 @@ apathy("http")
 	}, all(a, b, c))
 	.use(({ locals }) => {
 		locals.store.push("ANY");
-	}, any(a, b, c))
+	}, any(a, b, d))
 	.use(({ locals }) => {
 		locals.store.push("ONE");
-	}, one(a, b, c))
+	}, one(a, b, c, d))
 	.all(async ({ response, locals: { store } }) => {
 		console.log(store);
 		response.end(JSON.stringify(store));
 	})
-	.listen(3000, ({ address, scheme }) => {
-		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
+	.listen(3000, ({ address }) => {
+		console.log(`Listening at ${address.address}:${address.port}`);
 	});

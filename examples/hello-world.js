@@ -4,6 +4,6 @@ apathy("http")
 	.get(({ response }) => {
 		response.end(`Hello, World!`);
 	})
-	.listen(3000, ({ address, scheme }) => {
-		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
+	.listen(3000, ({ address }) => {
+		console.log(`Listening at ${address.address}:${address.port}`);
 	});

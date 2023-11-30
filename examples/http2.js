@@ -8,6 +8,6 @@ apathy("http2", { cert, key })
 	.all(({ response }) => {
 		response.end();
 	})
-	.listen(8443, ({ address, scheme }) => {
-		console.log(`Listening at ${scheme}://${address.address}:${address.port}`);
+	.listen(8443, ({ address }) => {
+		console.log(`Listening at ${address.address}:${address.port}`);
 	});
