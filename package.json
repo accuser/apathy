@@ -1,15 +1,15 @@
 {
 	"name": "apathy",
-	"version": "0.0.1",
+	"version": "0.5.0",
 	"description": "Apathy",
 	"type": "module",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"benchmark": "pnpm build && pnpx concurrently -k -s first \"node ./examples/benchmark/simple.js\" \"pnpx autocannon -c 100 -d 30 -p 10 localhost:3000/\"",
-		"build": "tsc --build",
-		"build:watch": "tsc --build --preserveWatchOutput --watch",
-		"clean": "tsc --build --clean"
+		"benchmark": "concurrently -k -s first \"node ./examples/benchmark/simple.js\" \"autocannon -c 100 -d 30 -p 10 localhost:3000/\"",
+		"build": "tsc --build --pretty",
+		"clean": "tsc --build --clean",
+		"dev": "tsc --build --preserveWatchOutput --pretty --watch"
 	},
 	"keywords": [
 		"javascript",
@@ -27,7 +27,9 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@types/node": "^20.10.0",
-		"regexparam": "^2.0.1",
+		"autocannon": "^7.14.0",
+		"concurrently": "^8.2.2",
+		"tslib": "^2.6.2",
 		"typescript": "^5.3.2"
 	}
 }
