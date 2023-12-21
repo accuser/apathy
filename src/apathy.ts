@@ -2,11 +2,6 @@ import router, { Router } from "./router.js";
 import server, { type Server } from "./server.js";
 
 /**
- * @template P
- * @typedef {import('server').Protocol} Protocol
- */
-
-/**
  * Apathy is a library for building performant RESTful APIs, particularly for microservices.
  *
  * @interface Apathy
@@ -110,85 +105,28 @@ export default <P extends Server.Protocol>(
 	protocol = "http" as P,
 	options = {} as Server.Options<P>
 ): Apathy<P> =>
-	Object.assign(router(), server(protocol, options), {
-		all: buildAll(),
-		delete: buildDelete(),
-		get: buildGet(),
-		head: buildHead(),
-		options: buildOptions(),
-		patch: buildPatch(),
-		post: buildPost(),
-		put: buildPut(),
-	});
-
-/**
- * Build the `all` registration helper function.
- * @private
- */
-const buildAll = <P extends Server.Protocol>(): Apathy<P>["all"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(...args);
-	};
-
-/**
- * Build the `delete` registration helper function.
- * @private
- */
-const buildDelete = <P extends Server.Protocol>(): Apathy<P>["delete"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.DELETE, ...args);
-	};
-
-/**
- * Build the `get` registration helper function.
- * @private
- */
-const buildGet = <P extends Server.Protocol>(): Apathy<P>["get"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.GET, ...args);
-	};
-
-/**
- * Build the `head` registration helper function.
- * @private
- */
-const buildHead = <P extends Server.Protocol>(): Apathy<P>["head"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.HEAD, ...args);
-	};
-
-/**
- * Build the `options` registration helper function.
- * @private
- */
-const buildOptions = <P extends Server.Protocol>(): Apathy<P>["options"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.OPTIONS, ...args);
-	};
-
-/**
- * Build the `patch` registration function.
- * @private
- */
-const buildPatch = <P extends Server.Protocol>(): Apathy<P>["patch"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.PATCH, ...args);
-	};
-
-/**
- * Build the `post` registration function.
- * @private
- */
-const buildPost = <P extends Server.Protocol>(): Apathy<P>["post"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.POST, ...args);
-	};
-
-/**
- * Build the `put` registration function.
- * @private
- */
-const buildPut = <P extends Server.Protocol>(): Apathy<P>["put"] =>
-	function (this: Apathy<P>, ...args) {
-		return this.on(Router.METHODS.PUT, ...args);
-	};
+	Object.assign(
+		router(),
+		server(protocol, options),
+		Object.entries(Router.METHODS).reduce(
+			(p, [key, value]) =>
+				Object.assign(p, {
+					[key]: function (
+						this: Apathy<P>,
+						path: string,
+						...handler: Router.Handler<P>[]
+					) {
+						return this.on(value as Router.Method, path, ...handler);
+					},
+				}),
+			Object.create({
+				all: function (
+					this: Apathy<P>,
+					path: string,
+					...handler: Router.Handler<P>[]
+				) {
+					return this.on(path, ...handler);
+				},
+			})
+		)
+	);
