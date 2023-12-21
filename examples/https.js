@@ -12,7 +12,7 @@ import { cert, key } from "./env.js";
  * ```
  */
 apathy("https", { cert, key })
-	.get(({ request: { httpVersion, method, url } }) => {
+	.get("/", ({ request: { httpVersion, method, url } }) => {
 		console.log(`${method} ${url} HTTP/${+httpVersion}`);
 		response.end(`We're talking over HTTPS`);
 	})

@@ -1,7 +1,7 @@
 import apathy from "../dist/index.js";
 
 apathy("http")
-	.get(({ response }) => {
+	.get("/", ({ response }) => {
 		response.end();
 	})
 	.listen(3000, ({ address }) => {
