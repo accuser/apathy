@@ -1,8 +1,8 @@
 import { Server } from "./server.js";
 import { Trie } from "./trie.js";
 
-export interface Router<P extends Server.Protocol> {
-	(request: Server.Request<P>, response: Server.Response<P>): void;
+export interface Router<P extends Server.Protocol>
+	extends Server.RequestListener<P> {
 	on(...handler: Router.Handler<P>[]): this;
 	on(path: string, ...handler: Router.Handler<P>[]): this;
 	on(
