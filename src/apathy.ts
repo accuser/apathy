@@ -124,13 +124,16 @@ const buildApathy = <P extends Server.Protocol>(methods = Router.METHODS) =>
 					return this.on(value as Router.Method, path, ...handler);
 				},
 			}),
-		Object.assign({
-			all: function (
-				this: Apathy<P>,
-				path: string,
-				...handler: Router.Handler<P>[]
-			) {
-				return this.on(path, ...handler);
-			},
-		})
+		buildOn()
 	);
+
+const buildOn = <P extends Server.Protocol>() =>
+	Object.assign({
+		all: function (
+			this: Apathy<P>,
+			path: string,
+			...handler: Router.Handler<P>[]
+		) {
+			return this.on(path, ...handler);
+		},
+	});

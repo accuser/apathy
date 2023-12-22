@@ -14,10 +14,7 @@ export interface Router<P extends Server.Protocol>
 
 export default <P extends Server.Protocol>(
 	root = { children: {} } as Trie.Node
-): Router<P> =>
-	Object.assign(buildHandle(root), {
-		on: buildOn(root),
-	});
+): Router<P> => buildRouter(root);
 
 export namespace Router {
 	export interface Event<P extends Server.Protocol> {
@@ -77,10 +74,7 @@ const buildHandle = <P extends Server.Protocol>(
 				res.writeHead(405, "Method Not Allowed", {
 					"content-type": "text/plain",
 				});
-		} else
-			res.writeHead(404, "Not Found", {
-				"content-type": "text/plain",
-			});
+		}
 
 		if (!res.writableEnded) res.end();
 	};
@@ -115,3 +109,8 @@ const buildOn = <P extends Server.Protocol>(root: Trie.Node): Router<P>["on"] =>
 
 		return this;
 	};
+
+const buildRouter = <P extends Server.Protocol>(root: Trie.Node): Router<P> =>
+	Object.assign(buildHandle(root), {
+		on: buildOn(root),
+	});

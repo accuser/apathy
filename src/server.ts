@@ -102,7 +102,7 @@ export interface Server<P extends Server.Protocol>
 export default <P extends Server.Protocol>(
 	protocol: P,
 	options: Server.Options<P>
-): Server<P> => Object.assign({ listen: buildListen(protocol, options) });
+): Server<P> => buildServer(protocol, options);
 
 export namespace Server {
 	export type Protocol = keyof typeof PROTOCOLS;
@@ -115,22 +115,22 @@ export namespace Server {
 	export type Request<P extends Protocol> = P extends "http2"
 		? import("node:http2").Http2ServerRequest
 		: P extends "http" | "https"
-		? import("node:http").IncomingMessage
-		: never;
+			? import("node:http").IncomingMessage
+			: never;
 
 	export type Response<P extends Protocol> = P extends "http2"
 		? import("node:http2").Http2ServerResponse
 		: P extends "http" | "https"
-		? import("node:http").ServerResponse
-		: never;
+			? import("node:http").ServerResponse
+			: never;
 
 	export type Options<P extends Protocol> = P extends "http2"
 		? import("node:http2").SecureServerOptions
 		: P extends "https"
-		? import("node:https").ServerOptions
-		: P extends "http"
-		? import("node:http").ServerOptions
-		: never;
+			? import("node:https").ServerOptions
+			: P extends "http"
+				? import("node:http").ServerOptions
+				: never;
 
 	export interface ListenCallback {
 		(args: {
@@ -167,8 +167,8 @@ const resolveListenArgs = (
 		typeof arg_2 === "number"
 			? arg_2
 			: typeof arg_1 === "number"
-			? arg_1
-			: undefined;
+				? arg_1
+				: undefined;
 
 	const callback =
 		arg_3 ||
@@ -180,8 +180,8 @@ const resolveListenArgs = (
 		(typeof arg_0 === "number"
 			? undefined
 			: typeof arg_0 === "function"
-			? undefined
-			: arg_0) || ({ backlog, host, port } as Server.ListenOptions);
+				? undefined
+				: arg_0) || ({ backlog, host, port } as Server.ListenOptions);
 
 	return { callback, options };
 };
@@ -215,6 +215,11 @@ const buildListen = <P extends Server.Protocol>(
 		return server;
 	};
 
+const buildServer = <P extends Server.Protocol>(
+	protocol: P,
+	options: Server.Options<P>
+) => Object.assign({ listen: buildListen(protocol, options) });
+
 const createServer = <P extends Server.Protocol>(
 	protocol: P,
 	options: Server.Options<P>,
@@ -224,15 +229,15 @@ const createServer = <P extends Server.Protocol>(
 		? createHttp2SecureServer(
 				options,
 				onRequestHandler as Server.RequestListener<"http2">
-		  )
+			)
 		: protocol === "https"
-		? createHttpsServer(
-				options,
-				onRequestHandler as Server.RequestListener<"https">
-		  )
-		: protocol === "http"
-		? createHttpServer(
-				options,
-				onRequestHandler as Server.RequestListener<"http">
-		  )
-		: undefined;
+			? createHttpsServer(
+					options,
+					onRequestHandler as Server.RequestListener<"https">
+				)
+			: protocol === "http"
+				? createHttpServer(
+						options,
+						onRequestHandler as Server.RequestListener<"http">
+					)
+				: undefined;
