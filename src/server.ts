@@ -190,7 +190,10 @@ const buildListen = <P extends Server.Protocol>(
 	protocol: P,
 	options: Server.Options<P>
 ) =>
-	function (this: Server<P>, ...args: Parameters<typeof resolveListenArgs>) {
+	function listen(
+		this: Server<P>,
+		...args: Parameters<typeof resolveListenArgs>
+	) {
 		const server = createServer(protocol, options, this);
 
 		if (server) {
