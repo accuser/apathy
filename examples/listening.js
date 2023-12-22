@@ -4,7 +4,7 @@ apathy("http")
 	.get("/", ({ response }) => {
 		response.end();
 	})
-	.listen(3000, ({ address }) => {
+	.listen(({ address }) => {
 		if (address === null) {
 			// do nothing
 		} else if (typeof address === "string") {

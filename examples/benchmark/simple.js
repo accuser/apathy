@@ -8,4 +8,4 @@ apathy("http")
 		});
 		response.end('{"hello":"world"}');
 	})
-	.listen({ port: 3000 });
+	.listen();
