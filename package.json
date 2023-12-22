@@ -6,10 +6,12 @@
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"benchmark": "concurrently -k -s first \"node ./examples/benchmark/simple.js\" \"autocannon -c 100 -d 30 -p 10 localhost:3000/\"",
+		"benchmark": "pnpm build && concurrently -k -s first \"node ./examples/benchmark/simple.js\" \"autocannon -c 100 -d 30 -p 10 localhost:3000/\"",
 		"build": "tsc --build --pretty",
 		"clean": "tsc --build --clean",
-		"dev": "tsc --build --preserveWatchOutput --pretty --watch"
+		"dev": "tsc --build --preserveWatchOutput --pretty --watch",
+		"format": "prettier --ignore-path .prettierignoree --write examples src",
+		"lint": "eslint"
 	},
 	"keywords": [
 		"javascript",
@@ -27,8 +29,14 @@
 	"license": "ISC",
 	"devDependencies": {
 		"@types/node": "^20.10.0",
+		"@typescript-eslint/eslint-plugin": "^6.15.0",
+		"@typescript-eslint/parser": "^6.15.0",
 		"autocannon": "^7.14.0",
 		"concurrently": "^8.2.2",
+		"eslint": "^8.56.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-jsdoc": "^46.9.1",
+		"prettier": "3.1.1",
 		"tslib": "^2.6.2",
 		"typescript": "^5.3.2"
 	}
