@@ -49,7 +49,7 @@ export namespace Router {
 const buildHandle = <P extends Server.Protocol>(
 	root: Trie.Node
 ): Server.RequestListener<P> =>
-	function (this: Router<P>, req, res) {
+	function handle(this: Router<P>, req, res) {
 		const url = new URL(req.url as string, "http://localhost");
 
 		const node =
@@ -86,7 +86,7 @@ const buildHandle = <P extends Server.Protocol>(
 	};
 
 const buildOn = <P extends Server.Protocol>(root: Trie.Node): Router<P>["on"] =>
-	function (this: Router<P>, ...args) {
+	function on(this: Router<P>, ...args) {
 		const method =
 			typeof args[0] === "string" && typeof args[1] === "string"
 				? (args.shift() as string)
