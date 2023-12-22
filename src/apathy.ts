@@ -105,28 +105,32 @@ export default <P extends Server.Protocol>(
 	protocol = "http" as P,
 	options = {} as Server.Options<P>
 ): Apathy<P> =>
-	Object.assign(
-		router(),
-		server(protocol, options),
-		Object.entries(Router.METHODS).reduce(
-			(p, [key, value]) =>
-				Object.assign(p, {
-					[key]: function (
-						this: Apathy<P>,
-						path: string,
-						...handler: Router.Handler<P>[]
-					) {
-						return this.on(value as Router.Method, path, ...handler);
-					},
-				}),
-			Object.create({
-				all: function (
+	Object.assign(router(), server(protocol, options), buildApathy());
+
+/**
+ * @private
+ * @param methods - collection of methods to include
+ * @returns
+ */
+const buildApathy = <P extends Server.Protocol>(methods = Router.METHODS) =>
+	Object.entries(methods).reduce(
+		(p, [key, value]) =>
+			Object.assign(p, {
+				[key.toLowerCase()]: function (
 					this: Apathy<P>,
 					path: string,
 					...handler: Router.Handler<P>[]
 				) {
-					return this.on(path, ...handler);
+					return this.on(value as Router.Method, path, ...handler);
 				},
-			})
-		)
+			}),
+		Object.assign({
+			all: function (
+				this: Apathy<P>,
+				path: string,
+				...handler: Router.Handler<P>[]
+			) {
+				return this.on(path, ...handler);
+			},
+		})
 	);
