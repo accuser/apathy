@@ -2,6 +2,7 @@ import { Abortable } from "node:events";
 import { createServer as createHttpServer } from "node:http";
 import { createSecureServer as createHttp2SecureServer } from "node:http2";
 import { createServer as createHttpsServer } from "node:https";
+import { pid } from "node:process";
 import { DEFAULT_HOST, DEFAULT_PORT } from "./env.js";
 
 /**
@@ -135,6 +136,7 @@ export namespace Server {
 		(args: {
 			address: string | import("node:net").AddressInfo | null;
 			listening: boolean;
+			pid: number;
 		}): void;
 	}
 
@@ -201,6 +203,7 @@ const buildListen = <P extends Server.Protocol>(
 							callback({
 								address: server.address(),
 								listening: server.listening,
+								pid,
 							})
 					: undefined
 			);

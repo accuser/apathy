@@ -29,7 +29,7 @@ if (cluster.isPrimary) {
 			});
 			response.end('{"hello":"world"}');
 		})
-		.listen({ port: 3000 });
-
-	console.log(`Worker ${process.pid} started`);
+		.listen({ port: 3000 }, ({ pid }) => {
+			console.log(`Worker ${process.pid} started`);
+		});
 }
